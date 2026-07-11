@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runPipeline } from "@/lib/pipeline/run";
 
-export const maxDuration = 800; // Claude enrichment across ~20 stories takes a while
+export const maxDuration = 300; // Vercel Hobby plan ceiling; enrichment across ~20 stories must fit
 export const dynamic = "force-dynamic";
 
 function authorized(req: NextRequest): boolean {
