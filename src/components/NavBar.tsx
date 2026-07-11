@@ -25,7 +25,7 @@ export default function NavBar() {
   }, []);
 
   const itemBase =
-    "flex flex-col items-center gap-0.5 rounded-2xl transition-all duration-300 sm:flex-row sm:gap-2";
+    "flex flex-col items-center gap-0.5 rounded-2xl transition-all duration-200 sm:flex-row sm:gap-2";
   const itemPad = shrunk ? "px-2.5 py-1 sm:px-3.5" : "px-3 py-1.5 sm:px-4 sm:py-2";
   const labelSize = shrunk ? "text-[9px] sm:text-xs" : "text-[10px] sm:text-sm";
   const iconSize = shrunk ? 15 : 18;
@@ -33,22 +33,22 @@ export default function NavBar() {
   return (
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 sm:pt-4">
       <nav
-        className={`glass-strong mx-auto flex w-full max-w-5xl items-center justify-between rounded-2xl transition-all duration-300 ${
+        className={`glass-strong mx-auto flex w-full max-w-5xl items-center justify-between rounded-2xl transition-all duration-200 ${
           shrunk ? "px-3 py-1 sm:px-4 sm:py-1.5" : "px-4 py-2.5 sm:px-5 sm:py-3"
         }`}
       >
         <Link
           href="/"
-          className="flex items-center gap-2 font-extrabold tracking-tight text-neutral-950 transition-all duration-300 hover:opacity-70"
+          className="flex items-center gap-2 font-extrabold tracking-tight text-neutral-950 transition-all duration-200 hover:opacity-70"
         >
           <span
-            className={`flex items-center justify-center rounded-xl bg-neutral-950 text-white transition-all duration-300 ${
+            className={`flex items-center justify-center rounded-xl bg-neutral-950 text-white transition-all duration-200 ${
               shrunk ? "h-7 w-7" : "h-9 w-9"
             }`}
           >
             <IconNews size={shrunk ? 15 : 19} />
           </span>
-          <span className={`hidden transition-all duration-300 sm:inline ${shrunk ? "text-base" : "text-lg"}`}>
+          <span className={`hidden transition-all duration-200 sm:inline ${shrunk ? "text-base" : "text-lg"}`}>
             InTouch
           </span>
         </Link>
@@ -66,8 +66,8 @@ export default function NavBar() {
                     : "text-neutral-600 hover:bg-white hover:text-neutral-950"
                 }`}
               >
-                <Icon size={iconSize} className="transition-all duration-300" />
-                <span className={`font-medium transition-all duration-300 ${labelSize}`}>{label}</span>
+                <Icon size={iconSize} className="transition-all duration-200" />
+                <span className={`font-medium transition-all duration-200 ${labelSize}`}>{label}</span>
               </Link>
             );
           })}
@@ -80,9 +80,9 @@ export default function NavBar() {
           >
             <IconRefresh
               size={iconSize}
-              className={`transition-all duration-300 ${refreshing ? "animate-spin" : ""}`}
+              className={`transition-all duration-200 ${refreshing ? "animate-spin" : ""}`}
             />
-            <span className={`font-medium transition-all duration-300 ${labelSize}`}>
+            <span className={`font-medium transition-all duration-200 ${labelSize}`}>
               {refreshing ? "…" : "Refresh"}
             </span>
           </button>

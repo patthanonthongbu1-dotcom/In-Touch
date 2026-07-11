@@ -9,37 +9,17 @@ import {
   IconSliders,
   IconStar,
   IconTrash,
-  IconTrending,
   IconX,
 } from "@/components/icons";
 
-const MASTERY_MAX = 5;
 const CEFR_LEVELS = ["A2", "B1", "B2", "C1", "C2"] as const;
 
-type SortKey = "newest" | "alpha" | "weakest" | "strongest";
+type SortKey = "newest" | "alpha";
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "newest", label: "Newest first" },
   { key: "alpha", label: "A → Z" },
-  { key: "weakest", label: "Weakest first" },
-  { key: "strongest", label: "Strongest first" },
 ];
-
-function MasteryBar({ mastery }: { mastery: number }) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-neutral-200">
-        <div
-          className="h-full rounded-full bg-neutral-950 transition-all duration-500"
-          style={{ width: `${(mastery / MASTERY_MAX) * 100}%` }}
-        />
-      </div>
-      <span className="text-[11px] font-semibold text-neutral-500">
-        {mastery}/{MASTERY_MAX}
-      </span>
-    </div>
-  );
-}
 
 export default function VocabularyPage() {
   const [items, setItems] = useState<VocabBankItem[] | null>(null);
@@ -49,6 +29,7 @@ export default function VocabularyPage() {
   const [sort, setSort] = useState<SortKey>("newest");
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [weekCutoff, setWeekCutoff] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
 
@@ -60,7 +41,10 @@ export default function VocabularyPage() {
         return res.json();
       })
       .then((data) => {
-        if (!cancelled) setItems(data.items);
+        if (!cancelled) {
+          setItems(data.items);
+          setWeekCutoff(Date.now() - 7 * 24 * 3600 * 1000);
+        }
       })
       .catch((e) => {
         if (!cancelled) {
@@ -94,25 +78,6 @@ export default function VocabularyPage() {
     });
   }
 
-  async function markReviewed(item: VocabBankItem, correct: boolean) {
-    const res = await fetch("/api/vocab", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: item.id, reviewed: true, correct }),
-    });
-    if (res.ok) {
-      const { mastery } = await res.json();
-      setItems(
-        (prev) =>
-          prev?.map((i) =>
-            i.id === item.id
-              ? { ...i, review_count: i.review_count + 1, mastery }
-              : i
-          ) ?? null
-      );
-    }
-  }
-
   async function remove(item: VocabBankItem) {
     setItems((prev) => prev?.filter((i) => i.id !== item.id) ?? null);
     await fetch(`/api/vocab?id=${item.id}`, { method: "DELETE" });
@@ -132,10 +97,10 @@ export default function VocabularyPage() {
     return {
       total: all.length,
       favorites: all.filter((i) => i.favorite).length,
-      mastered: all.filter((i) => i.mastery >= 4).length,
-      reviews: all.reduce((sum, i) => sum + i.review_count, 0),
+      thisWeek: all.filter((i) => Date.parse(i.learned_at) >= weekCutoff).length,
+      advanced: all.filter((i) => i.card.cefr === "C1" || i.card.cefr === "C2").length,
     };
-  }, [items]);
+  }, [items, weekCutoff]);
 
   const visible = useMemo(() => {
     const filtered = (items ?? []).filter((item) => {
@@ -145,18 +110,10 @@ export default function VocabularyPage() {
       return true;
     });
     const sorted = [...filtered];
-    switch (sort) {
-      case "alpha":
-        sorted.sort((a, b) => a.word.localeCompare(b.word));
-        break;
-      case "weakest":
-        sorted.sort((a, b) => a.mastery - b.mastery);
-        break;
-      case "strongest":
-        sorted.sort((a, b) => b.mastery - a.mastery);
-        break;
-      default:
-        sorted.sort((a, b) => Date.parse(b.learned_at) - Date.parse(a.learned_at));
+    if (sort === "alpha") {
+      sorted.sort((a, b) => a.word.localeCompare(b.word));
+    } else {
+      sorted.sort((a, b) => Date.parse(b.learned_at) - Date.parse(a.learned_at));
     }
     return sorted;
   }, [items, favoritesOnly, cefr, query, sort]);
@@ -178,8 +135,8 @@ export default function VocabularyPage() {
         {[
           { label: "Words saved", value: stats.total },
           { label: "Favorites", value: stats.favorites },
-          { label: "Mastered", value: stats.mastered },
-          { label: "Total reviews", value: stats.reviews },
+          { label: "This week", value: stats.thisWeek },
+          { label: "C1+ words", value: stats.advanced },
         ].map((stat) => (
           <div key={stat.label} className="glass rounded-2xl px-4 py-3 text-center">
             <p className="text-2xl font-extrabold tracking-tight text-neutral-950">{stat.value}</p>
@@ -208,7 +165,7 @@ export default function VocabularyPage() {
             type="button"
             onClick={() => setFiltersOpen((v) => !v)}
             aria-expanded={filtersOpen}
-            className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
+            className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
               filtersOpen || activeFilterCount > 0
                 ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/20"
                 : "glass text-neutral-600 hover:bg-white hover:text-neutral-950"
@@ -329,7 +286,7 @@ export default function VocabularyPage() {
           return (
             <li
               key={item.id}
-              className={`glass rounded-3xl p-5 transition-all duration-300 hover:bg-white/85 hover:shadow-[0_20px_44px_-24px_rgb(10_10_10/0.25)] ${
+              className={`glass rounded-3xl p-5 transition-all duration-200 hover:bg-white/85 hover:shadow-[0_20px_44px_-24px_rgb(10_10_10/0.25)] ${
                 open ? "sm:col-span-2" : ""
               }`}
             >
@@ -366,8 +323,6 @@ export default function VocabularyPage() {
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-neutral-400">
-                <MasteryBar mastery={item.mastery} />
-                <span>{item.review_count} reviews</span>
                 <span>learned {new Date(item.learned_at).toLocaleDateString()}</span>
               </div>
 
@@ -399,22 +354,8 @@ export default function VocabularyPage() {
                   <div className="flex flex-wrap gap-2 pt-2">
                     <button
                       type="button"
-                      onClick={() => markReviewed(item, true)}
-                      className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/25 transition-all hover:-translate-y-0.5 hover:bg-emerald-700"
-                    >
-                      <IconCheck size={12} /> I remembered it
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => markReviewed(item, false)}
-                      className="flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-amber-500/25 transition-all hover:-translate-y-0.5 hover:bg-amber-600"
-                    >
-                      <IconTrending size={12} className="rotate-180" /> I forgot it
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => remove(item)}
-                      className="flex items-center gap-1.5 rounded-full border border-red-200 bg-white/60 px-4 py-1.5 text-xs font-semibold text-red-500 transition-all hover:-translate-y-0.5 hover:bg-red-50"
+                      className="flex items-center gap-1.5 rounded-full border border-red-200 bg-white/60 px-4 py-1.5 text-xs font-semibold text-red-500 transition-all duration-150 hover:-translate-y-0.5 hover:bg-red-50"
                     >
                       <IconTrash size={12} /> Delete
                     </button>

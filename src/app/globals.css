@@ -64,3 +64,50 @@ body::before {
 .pill-scroll::-webkit-scrollbar {
   display: none;
 }
+
+/* Infinite marquee for the trending strip: track holds two identical sets,
+   sliding one set-width per loop. Pauses on hover. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-mask {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee var(--marquee-duration, 36s) linear infinite;
+}
+
+.marquee-track.reverse {
+  animation-direction: reverse;
+}
+
+.marquee-mask:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* Quick spring-in for the vocabulary toolbox popover */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-pop-in {
+  animation: pop-in 0.15s ease-out;
+}

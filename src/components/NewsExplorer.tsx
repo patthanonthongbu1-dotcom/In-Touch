@@ -31,7 +31,7 @@ function Pill({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+      className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-150 ${
         active
           ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/20"
           : "glass text-neutral-600 hover:-translate-y-0.5 hover:bg-white hover:text-neutral-950"
@@ -47,7 +47,7 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
   return (
     <Link
       href={`/article/${article.id}`}
-      className={`group glass relative flex flex-col overflow-hidden rounded-3xl transition-all duration-300 hover:-translate-y-1.5 hover:bg-white/85 hover:shadow-[0_28px_56px_-24px_rgb(10_10_10/0.3)] ${
+      className={`group glass relative flex flex-col overflow-hidden rounded-3xl transition-all duration-200 hover:-translate-y-1.5 hover:bg-white/85 hover:shadow-[0_28px_56px_-24px_rgb(10_10_10/0.3)] ${
         featured ? "sm:col-span-2" : ""
       }`}
     >
@@ -59,7 +59,7 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
             src={article.image_url}
             alt=""
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         </div>
       )}
@@ -103,7 +103,7 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
             <IconBook size={12} /> {article.vocabulary.length} words
           </span>
           <span className="truncate">{article.source}</span>
-          <span className="ml-auto flex items-center gap-1 font-semibold text-emerald-600 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 sm:-translate-x-2">
+          <span className="ml-auto flex items-center gap-1 font-semibold text-emerald-600 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 sm:-translate-x-2">
             Read more →
           </span>
         </div>
@@ -202,7 +202,7 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
         >
           <IconChevronDown
             size={16}
-            className={`transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+            className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
           />
         </button>
 
@@ -211,7 +211,7 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
             type="button"
             onClick={() => setFiltersOpen((v) => !v)}
             aria-expanded={filtersOpen}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-150 ${
               filtersOpen || activeFilterCount > 0
                 ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/20"
                 : "glass text-neutral-600 hover:bg-white hover:text-neutral-950"
