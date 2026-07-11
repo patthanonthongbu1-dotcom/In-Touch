@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { IconBook, IconGear, IconNews, IconRefresh } from "@/components/icons";
+import logo from "@/app/In0Touch.png";
 
 const LINKS = [
   { href: "/", icon: IconNews, label: "Today" },
@@ -39,18 +41,17 @@ export default function NavBar() {
       >
         <Link
           href="/"
-          className="flex items-center gap-2 font-extrabold tracking-tight text-neutral-950 transition-all duration-200 hover:opacity-70"
+          aria-label="InTouch — home"
+          className="flex items-center transition-opacity duration-200 hover:opacity-70"
         >
-          <span
-            className={`flex items-center justify-center rounded-xl bg-neutral-950 text-white transition-all duration-200 ${
-              shrunk ? "h-7 w-7" : "h-9 w-9"
-            }`}
-          >
-            <IconNews size={shrunk ? 15 : 19} />
-          </span>
-          <span className={`hidden transition-all duration-200 sm:inline ${shrunk ? "text-base" : "text-lg"}`}>
-            InTouch
-          </span>
+          {/* The PNG has generous transparent padding, so it renders larger
+              than the bar with negative margins and crops invisibly. */}
+          <Image
+            src={logo}
+            alt="InTouch"
+            priority
+            className={`w-auto transition-all duration-200 ${shrunk ? "-my-7 h-18" : "-my-9 h-24"}`}
+          />
         </Link>
 
         <div className="flex items-center gap-0.5 sm:gap-1">
