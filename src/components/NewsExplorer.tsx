@@ -101,7 +101,7 @@ function ArticleCard({
         </div>
 
         <h3
-          className={`mt-4 font-semibold leading-snug tracking-tight text-neutral-950 ${
+          className={`mt-4 break-words font-semibold leading-snug tracking-tight text-neutral-950 ${
             featured ? "text-2xl sm:text-3xl" : "text-lg"
           }`}
         >
@@ -117,14 +117,14 @@ function ArticleCard({
         </p>
 
         <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-5 text-xs text-neutral-400">
-          <span className="flex items-center gap-1">
+          <span className="flex shrink-0 items-center gap-1">
             <IconClock size={12} /> {article.reading_time_min} min
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex shrink-0 items-center gap-1">
             <IconBook size={12} /> {article.vocabulary.length} words
           </span>
-          <span className="truncate">{article.source}</span>
-          <span className="ml-auto flex items-center gap-1 font-semibold text-neutral-950 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 sm:-translate-x-2">
+          <span className="min-w-0 max-w-full flex-1 truncate">{article.source}</span>
+          <span className="ml-auto flex shrink-0 items-center gap-1 font-semibold text-neutral-950 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 sm:-translate-x-2">
             Read more →
           </span>
         </div>

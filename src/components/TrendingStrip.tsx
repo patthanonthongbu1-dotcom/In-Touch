@@ -11,11 +11,11 @@ function TrendPill({ trend }: { trend: Trend }) {
       href={trend.searchUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex shrink-0 items-center gap-1.5 rounded-full bg-white/70 px-3.5 py-1.5 text-sm font-medium text-neutral-950 ring-1 ring-neutral-200/70 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-950 hover:text-white"
+      className="group flex min-w-0 shrink-0 items-center gap-1.5 rounded-full bg-white/70 px-3.5 py-1.5 text-sm font-medium text-neutral-950 ring-1 ring-neutral-200/70 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-950 hover:text-white"
     >
-      <span className="truncate sm:max-w-none">{hashtag(trend.title)}</span>
+      <span className="min-w-0 truncate">{hashtag(trend.title)}</span>
       {trend.traffic && (
-        <span className="text-[10px] font-semibold text-neutral-400 transition-colors group-hover:text-neutral-300">
+        <span className="shrink-0 text-[10px] font-semibold text-neutral-400 transition-colors group-hover:text-neutral-300">
           {trend.traffic}
         </span>
       )}
@@ -78,8 +78,8 @@ export default async function TrendingStrip() {
         <MarqueeRow label="🌍" trends={worldwide} reverse />
       </div>
 
-      {/* Mobile: compact grid */}
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:hidden">
+      {/* Mobile: compact grid — cells clamp so long hashtags truncate, never overflow */}
+      <div className="mt-3 grid w-full grid-cols-2 gap-2 overflow-hidden sm:hidden">
         {[...thailand.slice(0, 4), ...worldwide.slice(0, 4)].map((trend) => (
           <TrendPill key={trend.title} trend={trend} />
         ))}
