@@ -74,17 +74,17 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
 
   return (
     <div>
-      <p className="mt-5 text-[1.05rem] leading-relaxed">
+      <p className="mt-6 text-lg leading-8 text-neutral-800">
         {segments.map((segment, i) =>
           segment.entry ? (
             <button
               key={i}
               type="button"
               onClick={() => handleWordClick(segment.entry!)}
-              className={`rounded px-0.5 font-medium underline decoration-2 underline-offset-2 transition ${
+              className={`rounded-md px-0.5 font-medium underline decoration-2 underline-offset-4 transition-all duration-200 ${
                 selected?.word === segment.entry.word
-                  ? "bg-emerald-200 decoration-emerald-600 dark:bg-emerald-900"
-                  : "decoration-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950"
+                  ? "bg-emerald-100 text-emerald-900 decoration-emerald-500 shadow-sm"
+                  : "decoration-emerald-300 hover:bg-emerald-50 hover:decoration-emerald-500"
               }`}
             >
               {segment.text}
@@ -96,21 +96,21 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
       </p>
 
       {vocabulary.length > 0 && !selected && (
-        <p className="mt-3 text-xs text-neutral-500">
+        <p className="mt-4 text-xs text-neutral-400">
           💡 Tap a <span className="underline decoration-emerald-400 decoration-2 underline-offset-2">highlighted</span> word
           to see its meaning — it&apos;s saved to your vocabulary bank automatically.
         </p>
       )}
 
       {selected && (
-        <div className="mt-5 rounded-lg border border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/40">
+        <div className="mt-6 rounded-3xl border border-emerald-200/80 bg-emerald-50/70 p-5 shadow-[0_16px_40px_-24px_rgb(5_150_105/0.45)] backdrop-blur-md sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-lg font-bold">
                 {selected.word}{" "}
                 <span className="text-sm font-normal text-neutral-500">
                   {selected.pronunciation} · {selected.partOfSpeech} ·{" "}
-                  <span className="rounded bg-white px-1 py-0.5 text-xs font-semibold dark:bg-neutral-800">
+                  <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                     {selected.cefr}
                   </span>
                 </span>

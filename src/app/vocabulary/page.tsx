@@ -74,45 +74,48 @@ export default function VocabularyPage() {
   });
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold tracking-tight">Vocabulary Bank</h1>
-      <p className="mt-1 text-sm text-neutral-500">
+    <div className="mx-auto max-w-3xl px-4 pt-12">
+      <h1 className="text-3xl font-extrabold tracking-tight text-neutral-950 sm:text-4xl">
+        📚 Vocabulary Bank
+      </h1>
+      <p className="mt-2 text-sm text-neutral-500 sm:text-base">
         Every word you tap while reading is saved here. Review them until they stick.
       </p>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-6 flex flex-wrap items-center gap-3">
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search words…"
-          className="w-full max-w-xs rounded-md border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          className="glass w-full max-w-xs rounded-full px-4 py-2.5 text-sm outline-none transition-all placeholder:text-neutral-400 focus:bg-white focus:shadow-lg"
         />
-        <label className="flex items-center gap-1.5 text-sm">
+        <label className="glass flex cursor-pointer items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-white">
           <input
             type="checkbox"
             checked={favoritesOnly}
             onChange={(e) => setFavoritesOnly(e.target.checked)}
+            className="accent-amber-400"
           />
           ⭐ Favorites only
         </label>
         {items && (
-          <span className="text-xs text-neutral-500">
+          <span className="text-xs font-medium text-neutral-400">
             {items.length} word{items.length === 1 ? "" : "s"} learned
           </span>
         )}
       </div>
 
       {error && (
-        <p className="mt-6 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30">
+        <p className="mt-6 rounded-2xl border border-red-200 bg-red-50/80 p-4 text-sm text-red-700 backdrop-blur">
           {error}
         </p>
       )}
 
-      {!error && items === null && <p className="mt-6 text-sm text-neutral-500">Loading…</p>}
+      {!error && items === null && <p className="mt-8 text-sm text-neutral-400">Loading…</p>}
 
       {items !== null && visible.length === 0 && !error && (
-        <p className="mt-6 text-sm text-neutral-500">
+        <p className="mt-8 text-sm text-neutral-400">
           {items.length === 0
             ? "No words yet — open an article and tap the highlighted words."
             : "No words match your filter."}
@@ -125,7 +128,7 @@ export default function VocabularyPage() {
           return (
             <li
               key={item.id}
-              className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
+              className="glass rounded-3xl p-5 transition-all duration-300 hover:bg-white/85 hover:shadow-[0_20px_44px_-24px_rgb(23_24_28/0.25)]"
             >
               <div className="flex items-start justify-between gap-3">
                 <button
@@ -168,7 +171,7 @@ export default function VocabularyPage() {
               </div>
 
               {open && (
-                <div className="mt-3 space-y-2 border-t border-neutral-200 pt-3 text-sm dark:border-neutral-800">
+                <div className="mt-4 space-y-2 border-t border-neutral-200/70 pt-4 text-sm">
                   {item.card.thai && (
                     <p>
                       <span className="font-semibold">Thai:</span> {item.card.thai}
@@ -191,21 +194,21 @@ export default function VocabularyPage() {
                     <button
                       type="button"
                       onClick={() => markReviewed(item, true)}
-                      className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+                      className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/25 transition-all hover:-translate-y-0.5 hover:bg-emerald-700"
                     >
                       I remembered it ✓
                     </button>
                     <button
                       type="button"
                       onClick={() => markReviewed(item, false)}
-                      className="rounded-md bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-600"
+                      className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-amber-500/25 transition-all hover:-translate-y-0.5 hover:bg-amber-600"
                     >
                       I forgot it ✗
                     </button>
                     <button
                       type="button"
                       onClick={() => remove(item)}
-                      className="rounded-md border border-red-300 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      className="rounded-full border border-red-200 bg-white/60 px-4 py-1.5 text-xs font-semibold text-red-500 transition-all hover:-translate-y-0.5 hover:bg-red-50"
                     >
                       Delete
                     </button>

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { CATEGORIES, CATEGORY_META, type Article } from "@/lib/types";
+import { type Article } from "@/lib/types";
+import NewsExplorer from "@/components/NewsExplorer";
 
 export const dynamic = "force-dynamic";
 
@@ -27,14 +27,16 @@ async function getLatestReport(): Promise<{ date: string; articles: Article[] } 
 
 function SetupNotice({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-neutral-300 p-6 text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
-      <p className="font-medium text-neutral-900 dark:text-neutral-100">No news yet</p>
-      <p className="mt-2">{message}</p>
-      <ol className="mt-3 list-decimal space-y-1 pl-5">
-        <li>Create a Supabase project and run <code>supabase/schema.sql</code> (and optionally <code>seed.sql</code>).</li>
-        <li>Fill in <code>.env.local</code> from <code>.env.example</code>.</li>
-        <li>Run <code>npm run pipeline</code> to fetch and publish today&apos;s report.</li>
-      </ol>
+    <div className="mx-auto mt-16 max-w-3xl px-4">
+      <div className="glass rounded-3xl p-8 text-sm text-neutral-600">
+        <p className="text-lg font-semibold text-neutral-900">No news yet</p>
+        <p className="mt-2">{message}</p>
+        <ol className="mt-3 list-decimal space-y-1 pl-5">
+          <li>Create a Supabase project and run <code>supabase/schema.sql</code> (and optionally <code>seed.sql</code>).</li>
+          <li>Fill in <code>.env.local</code> from <code>.env.example</code>.</li>
+          <li>Run <code>npm run pipeline</code> to fetch and publish today&apos;s report.</li>
+        </ol>
+      </div>
     </div>
   );
 }
@@ -56,46 +58,43 @@ export default async function HomePage() {
     year: "numeric",
   });
 
+  const totalVocab = report.articles.reduce((sum, a) => sum + a.vocabulary.length, 0);
+  const totalMinutes = report.articles.reduce((sum, a) => sum + a.reading_time_min, 0);
+
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight">Daily Report</h1>
-      <p className="mt-1 text-sm text-neutral-500">{displayDate}</p>
+      <section className="mx-auto max-w-5xl px-4 pb-14 pt-16 text-center sm:pb-20 sm:pt-28">
+        <p className="glass mx-auto inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-neutral-600">
+          📅 Daily Report <span className="text-neutral-300">|</span> {displayDate}
+        </p>
 
-      {CATEGORIES.map((category) => {
-        const articles = report.articles.filter((a) => a.category === category);
-        if (articles.length === 0) return null;
-        const meta = CATEGORY_META[category];
-        return (
-          <section key={category} className="mt-8">
-            <h2 className="text-lg font-semibold">
-              {meta.emoji} {meta.label}
-            </h2>
-            <ul className="mt-3 space-y-3">
-              {articles.map((article) => (
-                <li key={article.id}>
-                  <Link
-                    href={`/article/${article.id}`}
-                    className="block rounded-lg border border-neutral-200 p-4 transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
-                  >
-                    <h3 className="font-medium leading-snug">{article.headline}</h3>
-                    <p className="mt-1 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-400">
-                      {article.summary}
-                    </p>
-                    <p className="mt-2 flex flex-wrap gap-x-3 text-xs text-neutral-500">
-                      <span className="rounded bg-neutral-100 px-1.5 py-0.5 font-medium dark:bg-neutral-800">
-                        {article.difficulty}
-                      </span>
-                      <span>{article.reading_time_min} min read</span>
-                      <span>{article.vocabulary.length} vocab words</span>
-                      <span>{article.source}</span>
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
+        <h1 className="mx-auto mt-8 max-w-4xl text-5xl font-extrabold leading-[1.05] tracking-tighter text-neutral-950 sm:text-7xl">
+          Read the world.
+          <br />
+          <span className="text-gradient">Grow your English.</span>
+        </h1>
+
+        <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-neutral-500 sm:text-lg">
+          Today&apos;s most important stories, summarized in learner-friendly English —
+          tap any highlighted word to make it yours.
+        </p>
+
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-neutral-700">
+          <span className="glass rounded-2xl px-5 py-3">
+            📰 {report.articles.length} stories curated
+          </span>
+          <span className="glass rounded-2xl px-5 py-3">
+            📚 {totalVocab} vocabulary words
+          </span>
+          <span className="glass rounded-2xl px-5 py-3">
+            ⏱ ~{totalMinutes} min of reading
+          </span>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4">
+        <NewsExplorer articles={report.articles} />
+      </section>
     </div>
   );
 }
