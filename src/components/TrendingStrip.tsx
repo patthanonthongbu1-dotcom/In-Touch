@@ -41,7 +41,7 @@ function MarqueeRow({
       <div className="marquee-mask flex-1">
         <div
           className={`marquee-track ${reverse ? "reverse" : ""}`}
-          style={{ "--marquee-duration": `${Math.max(22, trends.length * 4)}s` } as React.CSSProperties}
+          style={{ "--marquee-duration": `${Math.max(50, trends.length * 9)}s` } as React.CSSProperties}
         >
           {[0, 1].map((dup) => (
             <div key={dup} className="flex gap-2 pr-2" aria-hidden={dup === 1}>

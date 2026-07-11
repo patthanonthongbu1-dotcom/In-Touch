@@ -270,7 +270,20 @@ export default function VocabularyPage() {
         </p>
       )}
 
-      {!error && items === null && <p className="mt-8 text-sm text-neutral-400">Loading…</p>}
+      {!error && items === null && (
+        <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+          {Array.from({ length: 6 }, (_, i) => (
+            <li key={i} className="glass space-y-3 rounded-3xl p-5">
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-28 animate-pulse rounded-full bg-neutral-950/10" />
+                <div className="h-5 w-10 animate-pulse rounded-full bg-neutral-950/10" />
+              </div>
+              <div className="h-4 w-full animate-pulse rounded-full bg-neutral-950/10" />
+              <div className="h-4 w-2/3 animate-pulse rounded-full bg-neutral-950/10" />
+            </li>
+          ))}
+        </ul>
+      )}
 
       {items !== null && visible.length === 0 && !error && (
         <p className="mt-8 text-sm text-neutral-400">

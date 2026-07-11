@@ -123,10 +123,10 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
               type="button"
               data-vocab-word
               onClick={(e) => handleWordClick(segment.entry!, e)}
-              className={`rounded-md px-0.5 font-medium underline decoration-2 underline-offset-4 transition-colors duration-150 ${
+              className={`rounded-md px-0.5 font-medium underline decoration-emerald-400 decoration-2 underline-offset-4 ring-neutral-950 transition-all duration-150 ${
                 selected?.word === segment.entry.word
-                  ? "bg-neutral-950 text-white decoration-neutral-950"
-                  : "decoration-emerald-400 hover:bg-emerald-50 hover:decoration-emerald-600"
+                  ? "bg-white ring-1"
+                  : "hover:ring-1 hover:ring-neutral-950/30"
               }`}
             >
               {segment.text}
@@ -152,12 +152,12 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
           ref={popoverRef}
           key={selected.word}
           style={{ top: anchor.top, left: anchor.left, width: anchor.width }}
-          className="animate-pop-in glass-strong absolute z-30 rounded-3xl p-5 max-sm:fixed! max-sm:inset-x-3! max-sm:top-auto! max-sm:bottom-3! max-sm:w-auto!"
+          className="animate-pop-in glass-solid absolute z-30 rounded-3xl p-5 max-sm:fixed! max-sm:inset-x-3! max-sm:top-auto! max-sm:bottom-3! max-sm:w-auto!"
         >
           {/* Arrow pointing at the tapped word */}
           <span
             style={{ left: anchor.arrow }}
-            className="absolute -top-1.5 h-3 w-3 -translate-x-1/2 rotate-45 rounded-[2px] border-l border-t border-white/90 bg-white/90 max-sm:hidden"
+            className="absolute -top-1.5 h-3 w-3 -translate-x-1/2 rotate-45 rounded-[2px] border-l border-t border-white bg-white max-sm:hidden"
           />
 
           <div className="flex items-start justify-between gap-3">

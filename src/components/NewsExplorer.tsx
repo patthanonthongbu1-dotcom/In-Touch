@@ -47,7 +47,7 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
   return (
     <Link
       href={`/article/${article.id}`}
-      className={`group glass relative flex flex-col overflow-hidden rounded-3xl transition-all duration-200 hover:-translate-y-1.5 hover:bg-white/85 hover:shadow-[0_28px_56px_-24px_rgb(10_10_10/0.3)] ${
+      className={`group glass relative flex flex-col overflow-hidden rounded-3xl ring-1 ring-transparent transition-all duration-200 hover:-translate-y-1.5 hover:bg-white/85 hover:shadow-[0_28px_56px_-24px_rgb(10_10_10/0.3)] hover:ring-neutral-950/25 ${
         featured ? "sm:col-span-2" : ""
       }`}
     >
@@ -80,7 +80,7 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
         </div>
 
         <h3
-          className={`mt-4 font-semibold leading-snug tracking-tight text-neutral-950 transition-colors group-hover:text-emerald-800 ${
+          className={`mt-4 font-semibold leading-snug tracking-tight text-neutral-950 ${
             featured ? "text-2xl sm:text-3xl" : "text-lg"
           }`}
         >
@@ -103,7 +103,7 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
             <IconBook size={12} /> {article.vocabulary.length} words
           </span>
           <span className="truncate">{article.source}</span>
-          <span className="ml-auto flex items-center gap-1 font-semibold text-emerald-600 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 sm:-translate-x-2">
+          <span className="ml-auto flex items-center gap-1 font-semibold text-neutral-950 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 sm:-translate-x-2">
             Read more →
           </span>
         </div>
