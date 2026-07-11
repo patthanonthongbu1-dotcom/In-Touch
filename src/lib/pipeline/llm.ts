@@ -15,7 +15,7 @@ export function provider(): Provider {
   );
 }
 
-const GEMINI_MODEL = () => process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const GEMINI_MODEL = () => process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
 const ANTHROPIC_MODEL = () => process.env.ANTHROPIC_MODEL ?? "claude-opus-4-8";
 
 let geminiClient: GoogleGenAI | null = null;

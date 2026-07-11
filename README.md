@@ -32,7 +32,7 @@ npm run dev        # start the app at http://localhost:3000
 npm run pipeline   # fetch, curate, summarize, and publish today's report
 ```
 
-The pipeline uses `gemini-2.5-flash` (Gemini, free) or `claude-opus-4-8` (Claude) by default — override with `GEMINI_MODEL` / `ANTHROPIC_MODEL`. A full daily report (~20 stories) takes a few minutes; on the Gemini free tier it automatically retries when rate-limited.
+The pipeline uses `gemini-3.5-flash` (Gemini, free) or `claude-opus-4-8` (Claude) by default — override with `GEMINI_MODEL` / `ANTHROPIC_MODEL`. A full daily report (~20 stories) takes a few minutes; on the Gemini free tier it automatically retries when rate-limited.
 
 ## How it works
 
