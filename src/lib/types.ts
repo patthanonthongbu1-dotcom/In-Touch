@@ -54,6 +54,7 @@ export interface Article {
   vocabulary: VocabEntry[];
   related: string[];
   image_url: string | null;
+  source_published_at: string | null;
   created_at: string;
 }
 

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CATEGORIES, CATEGORY_META, type Article, type Category } from "@/lib/types";
 import { useSettings } from "@/lib/settings";
+import { formatTimeBangkok } from "@/lib/dates";
 import {
   IconBook,
   IconCheck,
@@ -122,6 +123,9 @@ function ArticleCard({
           </span>
           <span className="flex shrink-0 items-center gap-1">
             <IconBook size={12} /> {article.vocabulary.length} words
+          </span>
+          <span className="shrink-0" title="Added to InTouch (Bangkok time)">
+            ↑ {formatTimeBangkok(article.created_at)}
           </span>
           <span className="min-w-0 max-w-full flex-1 truncate">{article.source}</span>
           <span className="ml-auto flex shrink-0 items-center gap-1 font-semibold text-neutral-950 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 sm:-translate-x-2">

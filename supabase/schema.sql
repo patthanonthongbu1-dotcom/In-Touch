@@ -17,11 +17,13 @@ create table if not exists articles (
   vocabulary jsonb not null default '[]',       -- VocabEntry[] highlighted in the summary
   related jsonb not null default '[]',          -- headlines of merged/related coverage
   image_url text,                               -- lead image from the source RSS item
-  created_at timestamptz not null default now()
+  source_published_at timestamptz,              -- when the source originally published it
+  created_at timestamptz not null default now() -- when it was added to InTouch
 );
 
--- Migration for databases created before image support (safe to re-run):
+-- Migrations for databases created before these columns (safe to re-run):
 alter table articles add column if not exists image_url text;
+alter table articles add column if not exists source_published_at timestamptz;
 
 create index if not exists articles_date_idx on articles (published_date desc, importance desc);
 create index if not exists articles_category_idx on articles (category);

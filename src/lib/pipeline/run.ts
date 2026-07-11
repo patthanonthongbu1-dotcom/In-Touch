@@ -7,6 +7,11 @@ function todayInBangkok(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date());
 }
 
+function earliestPublished(timestamps: string[]): string | null {
+  const parsed = timestamps.map((t) => Date.parse(t)).filter((n) => !Number.isNaN(n));
+  return parsed.length > 0 ? new Date(Math.min(...parsed)).toISOString() : null;
+}
+
 export interface PipelineResult {
   fetched: number;
   curated: number;
@@ -44,21 +49,25 @@ export async function runPipeline(): Promise<PipelineResult> {
     vocabulary: e.vocabulary,
     related: e.related,
     image_url: e.story.items.find((i) => i.image)?.image ?? null,
+    source_published_at: earliestPublished(e.story.items.map((i) => i.publishedAt)),
   }));
+
+  // Columns added after the initial schema; stripped if the DB lacks them.
+  const OPTIONAL_COLUMNS = ["image_url", "source_published_at"];
 
   let { error } = await supabase()
     .from("articles")
     .upsert(rows, { onConflict: "source_url" });
-  if (error && error.message.includes("image_url")) {
+  if (error && OPTIONAL_COLUMNS.some((col) => error!.message.includes(col))) {
     console.warn(
-      "articles.image_url column missing — publishing without images. Run in Supabase SQL editor: alter table articles add column if not exists image_url text;"
+      `Optional columns missing — publishing without them. Run supabase/schema.sql migrations. (${error.message})`
     );
-    const withoutImages = rows.map((row) => {
+    const stripped = rows.map((row) => {
       const copy: Record<string, unknown> = { ...row };
-      delete copy.image_url;
+      for (const col of OPTIONAL_COLUMNS) delete copy[col];
       return copy;
     });
-    ({ error } = await supabase().from("articles").upsert(withoutImages, { onConflict: "source_url" }));
+    ({ error } = await supabase().from("articles").upsert(stripped, { onConflict: "source_url" }));
   }
   if (error) throw new Error(`Supabase upsert failed: ${error.message}`);
 

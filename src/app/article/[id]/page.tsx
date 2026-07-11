@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { CATEGORY_META, type Article } from "@/lib/types";
 import Reader from "@/components/Reader";
 import MarkDone from "@/components/MarkDone";
+import { formatDateTimeBangkok } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,17 @@ export default async function ArticlePage({
         <h1 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-neutral-950 sm:text-4xl">
           {article.headline}
         </h1>
+
+        <p className="mt-3 text-xs text-neutral-400">
+          {article.source_published_at && (
+            <>
+              Originally published {formatDateTimeBangkok(article.source_published_at)}
+              <span className="mx-1.5">·</span>
+            </>
+          )}
+          Added to InTouch {formatDateTimeBangkok(article.created_at)}
+          <span className="ml-1">(Bangkok time)</span>
+        </p>
 
         <Reader
           articleId={article.id}
