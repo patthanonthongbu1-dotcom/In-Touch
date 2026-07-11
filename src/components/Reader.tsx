@@ -142,7 +142,7 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
         )}
       </p>
 
-      {vocabulary.length > 0 && !selected && (
+      {vocabulary.length > 0 && (
         <p className="mt-4 text-xs text-neutral-400">
           💡 Tap a{" "}
           <span className="underline decoration-emerald-400 decoration-2 underline-offset-2">
@@ -155,11 +155,14 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
       {selected &&
         anchor &&
         createPortal(
+        <>
+        {/* On phones the toolbox is the main focus: dim everything behind it */}
+        <div className="animate-fade-in fixed inset-0 z-40 bg-neutral-950/55 backdrop-blur-[2px] sm:hidden" />
         <div
           ref={popoverRef}
           key={selected.word}
           style={{ top: anchor.top, left: anchor.left, width: anchor.width }}
-          className="animate-pop-in glass-solid absolute z-50 rounded-3xl p-5 max-sm:fixed! max-sm:inset-x-3! max-sm:top-auto! max-sm:bottom-3! max-sm:w-auto!"
+          className="animate-pop-in glass-solid absolute z-50 rounded-3xl p-5 max-sm:fixed! max-sm:inset-x-3! max-sm:top-auto! max-sm:bottom-4! max-sm:w-auto! max-sm:p-6! max-sm:shadow-2xl"
         >
           {/* Arrow pointing at the tapped word */}
           <span
@@ -224,7 +227,8 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
               ))}
             </div>
           )}
-        </div>,
+        </div>
+        </>,
         document.body
       )}
     </div>

@@ -49,13 +49,23 @@ function Pill({
   );
 }
 
-function ArticleCard({ article, featured = false }: { article: Article; featured?: boolean }) {
+function ArticleCard({
+  article,
+  featured = false,
+  read = false,
+}: {
+  article: Article;
+  featured?: boolean;
+  read?: boolean;
+}) {
   const meta = CATEGORY_META[article.category] ?? { emoji: "📰", label: article.category };
   return (
     <Link
       href={`/article/${article.id}`}
       transitionTypes={["nav-forward"]}
-      className="group glass relative flex h-full flex-col overflow-hidden rounded-3xl ring-1 ring-transparent transition-all duration-200 hover:-translate-y-1.5 hover:bg-white/85 hover:shadow-[0_28px_56px_-24px_rgb(10_10_10/0.3)] hover:ring-neutral-950/25"
+      className={`group glass relative flex h-full flex-col overflow-hidden rounded-3xl ring-1 ring-transparent transition-all duration-200 hover:-translate-y-1.5 hover:bg-white/85 hover:shadow-[0_28px_56px_-24px_rgb(10_10_10/0.3)] hover:ring-neutral-950/25 ${
+        read ? "opacity-70 hover:opacity-100" : ""
+      }`}
     >
       {article.image_url && (
         <div className={`w-full overflow-hidden ${featured ? "h-52 sm:h-80" : "h-40 sm:h-44"}`}>
@@ -83,6 +93,11 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
           <span className="rounded-full border border-neutral-950 bg-white/80 px-2.5 py-1 font-semibold text-neutral-950">
             {article.difficulty}
           </span>
+          {read && (
+            <span className="flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-white">
+              <IconCheck size={11} /> Read
+            </span>
+          )}
         </div>
 
         <h3
@@ -119,7 +134,7 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
 }
 
 export default function NewsExplorer({ articles }: { articles: Article[] }) {
-  const { hiddenCategories } = useSettings();
+  const { hiddenCategories, readArticles } = useSettings();
   const [activeCategory, setActiveCategory] = useState<Filter>("all");
   const [cefr, setCefr] = useState<Set<string>>(new Set());
   const [shortOnly, setShortOnly] = useState(false);
@@ -205,9 +220,32 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
     .filter((a) => !shortOnly || a.reading_time_min <= 2);
 
   const activeFilterCount = cefr.size + (shortOnly ? 1 : 0);
+  const readCount = feedArticles.filter((a) => readArticles.includes(a.id)).length;
+  const progress = feedArticles.length > 0 ? (readCount / feedArticles.length) * 100 : 0;
 
   return (
     <div>
+      {/* Daily reading progress */}
+      {feedArticles.length > 0 && (
+        <div className="mb-5">
+          <div className="flex items-baseline justify-between text-xs font-medium">
+            <span className="uppercase tracking-wider text-neutral-400">
+              Today&apos;s progress
+            </span>
+            <span className="text-neutral-950">
+              {readCount === feedArticles.length && readCount > 0 ? "🎉 " : ""}
+              {readCount} / {feedArticles.length} read
+            </span>
+          </div>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-neutral-950/10">
+            <div
+              className="h-full rounded-full bg-neutral-950 transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Category bar: swipe sideways, expand to see everything, filters dropdown */}
       <div className="flex items-start gap-2">
         <div
@@ -360,7 +398,11 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
               className={`animate-card-in ${featured ? "sm:col-span-2" : ""}`}
               style={{ animationDelay: `${Math.min(i * 45, 400)}ms` }}
             >
-              <ArticleCard article={article} featured={featured} />
+              <ArticleCard
+                article={article}
+                featured={featured}
+                read={readArticles.includes(article.id)}
+              />
             </div>
           );
         })}

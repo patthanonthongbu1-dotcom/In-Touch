@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { CATEGORY_META, type Article } from "@/lib/types";
 import Reader from "@/components/Reader";
+import MarkDone from "@/components/MarkDone";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,17 @@ export default async function ArticlePage({
 
   const article = data as Article;
   const meta = CATEGORY_META[article.category] ?? { emoji: "📰", label: article.category };
+
+  // Neighbors in today's report (importance order) for prev/next navigation.
+  const { data: siblings } = await supabase()
+    .from("articles")
+    .select("id, headline")
+    .eq("published_date", article.published_date)
+    .order("importance", { ascending: false });
+  const report = siblings ?? [];
+  const index = report.findIndex((a) => a.id === article.id);
+  const prev = index > 0 ? report[index - 1] : null;
+  const next = index >= 0 && index < report.length - 1 ? report[index + 1] : null;
 
   return (
     <article className="mx-auto max-w-3xl px-4 pt-10">
@@ -94,6 +106,55 @@ export default async function ArticlePage({
           </ul>
         </div>
       )}
+
+      <div className="mt-8">
+        <MarkDone articleId={article.id} />
+      </div>
+
+      {(prev || next) && (
+        <nav className="mt-4 grid gap-3 sm:grid-cols-2">
+          {prev ? (
+            <Link
+              href={`/article/${prev.id}`}
+              transitionTypes={["nav-back"]}
+              className="glass group rounded-3xl p-5 ring-1 ring-transparent transition-all duration-200 hover:-translate-y-1 hover:bg-white/85 hover:ring-neutral-950/25"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                ← Previous story
+              </p>
+              <p className="mt-1.5 line-clamp-2 text-sm font-semibold text-neutral-950">
+                {prev.headline}
+              </p>
+            </Link>
+          ) : (
+            <span className="hidden sm:block" />
+          )}
+          {next && (
+            <Link
+              href={`/article/${next.id}`}
+              transitionTypes={["nav-forward"]}
+              className="glass group rounded-3xl p-5 text-right ring-1 ring-transparent transition-all duration-200 hover:-translate-y-1 hover:bg-white/85 hover:ring-neutral-950/25"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                Next story →
+              </p>
+              <p className="mt-1.5 line-clamp-2 text-sm font-semibold text-neutral-950">
+                {next.headline}
+              </p>
+            </Link>
+          )}
+        </nav>
+      )}
+
+      <p className="mt-6 text-center">
+        <Link
+          href="/"
+          transitionTypes={["nav-back"]}
+          className="text-sm font-medium text-neutral-400 underline-offset-4 transition-colors duration-150 hover:text-neutral-950 hover:underline"
+        >
+          All of today&apos;s stories
+        </Link>
+      </p>
     </article>
   );
 }

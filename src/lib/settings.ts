@@ -7,12 +7,14 @@ export interface AppSettings {
   hiddenCategories: Category[];
   pipelineSecret: string;
   tutorialDone: boolean;
+  readArticles: string[];
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   hiddenCategories: [],
   pipelineSecret: "",
   tutorialDone: false,
+  readArticles: [],
 };
 
 const STORAGE_KEY = "intouch-settings";

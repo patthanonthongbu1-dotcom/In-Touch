@@ -9,11 +9,28 @@ html {
   scroll-behavior: smooth;
 }
 
+/* clip (not hidden) keeps position:sticky working while killing x-scroll */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   min-height: 100vh;
   background-color: #fbfbfc;
   color: #0a0a0a;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Lighter blur on phones — heavy backdrop-filter is the main source of
+   scroll/animation jank on mobile GPUs */
+@media (max-width: 640px) {
+  .glass,
+  .glass-strong,
+  .glass-solid {
+    backdrop-filter: blur(8px) saturate(1.2);
+    -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  }
 }
 
 /* Soft color wash floating behind the white glass surfaces */
@@ -146,6 +163,19 @@ body::before {
 
 .animate-pop-in {
   animation: pop-in 0.15s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out both;
 }
 
 /* ---- Page view transitions ---- */
