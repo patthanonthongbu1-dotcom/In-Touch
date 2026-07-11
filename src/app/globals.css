@@ -148,6 +148,92 @@ body::before {
   animation: pop-in 0.15s ease-out;
 }
 
+/* ---- Page view transitions ---- */
+
+@keyframes vt-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vt-rise {
+  from {
+    transform: translateY(10px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes vt-slide {
+  from {
+    translate: var(--slide-offset) 0;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+/* Untyped navigations (nav bar links): quick fade with a gentle rise */
+::view-transition-old(.page-exit) {
+  animation: 120ms ease-in both vt-fade reverse;
+}
+::view-transition-new(.page-enter) {
+  animation:
+    180ms ease-out 80ms both vt-fade,
+    320ms cubic-bezier(0.22, 1, 0.36, 1) both vt-rise;
+}
+
+/* Opening an article slides content left; going back slides it right */
+::view-transition-old(.nav-forward) {
+  --slide-offset: -48px;
+  animation:
+    130ms ease-in both vt-fade reverse,
+    340ms cubic-bezier(0.22, 1, 0.36, 1) both vt-slide reverse;
+}
+::view-transition-new(.nav-forward) {
+  --slide-offset: 48px;
+  animation:
+    190ms ease-out 110ms both vt-fade,
+    340ms cubic-bezier(0.22, 1, 0.36, 1) both vt-slide;
+}
+::view-transition-old(.nav-back) {
+  --slide-offset: 48px;
+  animation:
+    130ms ease-in both vt-fade reverse,
+    340ms cubic-bezier(0.22, 1, 0.36, 1) both vt-slide reverse;
+}
+::view-transition-new(.nav-back) {
+  --slide-offset: -48px;
+  animation:
+    190ms ease-out 110ms both vt-fade,
+    340ms cubic-bezier(0.22, 1, 0.36, 1) both vt-slide;
+}
+
+/* The nav bar is the user's spatial anchor — it never moves during transitions */
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(site-header) {
+  display: none;
+}
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
 /* Staggered entrance for cards when a tab or filter changes */
 @keyframes card-in {
   from {

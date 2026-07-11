@@ -54,6 +54,7 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
   return (
     <Link
       href={`/article/${article.id}`}
+      transitionTypes={["nav-forward"]}
       className="group glass relative flex h-full flex-col overflow-hidden rounded-3xl ring-1 ring-transparent transition-all duration-200 hover:-translate-y-1.5 hover:bg-white/85 hover:shadow-[0_28px_56px_-24px_rgb(10_10_10/0.3)] hover:ring-neutral-950/25"
     >
       {article.image_url && (
