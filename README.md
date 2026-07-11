@@ -2,7 +2,7 @@
 
 Stay informed on the world's most important news while naturally improving your English. Every day the pipeline fetches news from trusted RSS feeds, merges duplicate coverage, ranks stories by global importance, and uses Claude to write learner-friendly summaries with clickable vocabulary. Tapped words are saved to your personal vocabulary bank for review.
 
-**Stack:** Next.js (App Router, TypeScript) · Supabase (Postgres) · Anthropic Claude API · free RSS feeds (no news API key needed).
+**Stack:** Next.js (App Router, TypeScript) · Supabase (Postgres) · Google Gemini (free tier) or Anthropic Claude · free RSS feeds (no news API key needed).
 
 ## Setup
 
@@ -21,7 +21,7 @@ cp .env.example .env.local
 Fill in:
 
 - `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — Supabase → Project Settings → API. The service-role key is only ever used server-side.
-- `ANTHROPIC_API_KEY` — from [platform.claude.com](https://platform.claude.com).
+- `GEMINI_API_KEY` — **free** from [aistudio.google.com](https://aistudio.google.com) (no credit card). Alternatively set `ANTHROPIC_API_KEY` from [platform.claude.com](https://platform.claude.com) (paid); Gemini is used when both are set.
 - `CRON_SECRET` — any long random string; protects the `/api/pipeline` endpoint.
 
 ### 3. Run
@@ -32,7 +32,7 @@ npm run dev        # start the app at http://localhost:3000
 npm run pipeline   # fetch, curate, summarize, and publish today's report
 ```
 
-The pipeline call to Claude uses `claude-opus-4-8` by default (set `ANTHROPIC_MODEL` to change it) and typically takes a few minutes for a full daily report (~20 stories).
+The pipeline uses `gemini-2.5-flash` (Gemini, free) or `claude-opus-4-8` (Claude) by default — override with `GEMINI_MODEL` / `ANTHROPIC_MODEL`. A full daily report (~20 stories) takes a few minutes; on the Gemini free tier it automatically retries when rate-limited.
 
 ## How it works
 

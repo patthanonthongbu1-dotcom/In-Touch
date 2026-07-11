@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { anthropic, MODEL } from "./claude";
+import { structuredCompletion } from "./llm";
 import { CATEGORIES } from "../types";
 import type { RawItem } from "./fetch";
 
@@ -41,24 +40,11 @@ export async function curateStories(items: RawItem[]): Promise<CuratedStory[]> {
     )
     .join("\n");
 
-  const response = await anthropic().messages.parse({
-    model: MODEL,
-    max_tokens: 16000,
-    thinking: { type: "adaptive" },
+  const parsed = await structuredCompletion({
     system: SYSTEM,
-    messages: [
-      {
-        role: "user",
-        content: `Here are today's raw items:\n\n${listing}\n\nSelect, merge, categorize, and rank today's stories.`,
-      },
-    ],
-    output_config: { format: zodOutputFormat(CurationSchema) },
+    user: `Here are today's raw items:\n\n${listing}\n\nSelect, merge, categorize, and rank today's stories.`,
+    schema: CurationSchema,
   });
-
-  const parsed = response.parsed_output;
-  if (!parsed) {
-    throw new Error(`Curation output failed to parse (stop_reason: ${response.stop_reason})`);
-  }
 
   return parsed.stories
     .map((story) => ({

@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { anthropic, MODEL } from "./claude";
+import { structuredCompletion, provider } from "./llm";
 import type { CuratedStory } from "./curate";
 import type { VocabEntry } from "../types";
 
@@ -51,24 +50,11 @@ async function enrichOne(story: CuratedStory): Promise<EnrichedStory> {
     .map((item) => `- [${item.source}] ${item.title}${item.snippet ? ` — ${item.snippet}` : ""}`)
     .join("\n");
 
-  const response = await anthropic().messages.parse({
-    model: MODEL,
-    max_tokens: 16000,
-    thinking: { type: "adaptive" },
+  const parsed = await structuredCompletion({
     system: SYSTEM,
-    messages: [
-      {
-        role: "user",
-        content: `Story headline: ${story.headline}\nCategory: ${story.category}\n\nCoverage:\n${coverage}\n\nWrite the digest entry.`,
-      },
-    ],
-    output_config: { format: zodOutputFormat(EnrichmentSchema) },
+    user: `Story headline: ${story.headline}\nCategory: ${story.category}\n\nCoverage:\n${coverage}\n\nWrite the digest entry.`,
+    schema: EnrichmentSchema,
   });
-
-  const parsed = response.parsed_output;
-  if (!parsed) {
-    throw new Error(`Enrichment failed for "${story.headline}" (stop_reason: ${response.stop_reason})`);
-  }
 
   return {
     story,
@@ -81,20 +67,21 @@ async function enrichOne(story: CuratedStory): Promise<EnrichedStory> {
   };
 }
 
-const CONCURRENCY = 3;
-
 export async function enrichStories(stories: CuratedStory[]): Promise<EnrichedStory[]> {
+  // The Gemini free tier is capped at ~10 requests/minute, so go gentler there.
+  const concurrency = provider() === "gemini" ? 2 : 3;
   const enriched: EnrichedStory[] = [];
-  for (let i = 0; i < stories.length; i += CONCURRENCY) {
-    const batch = stories.slice(i, i + CONCURRENCY);
+  for (let i = 0; i < stories.length; i += concurrency) {
+    const batch = stories.slice(i, i + concurrency);
     const results = await Promise.allSettled(batch.map(enrichOne));
-    for (const result of results) {
+    batch.forEach((story, j) => {
+      const result = results[j];
       if (result.status === "fulfilled") {
         enriched.push(result.value);
       } else {
-        console.warn(`Skipping story: ${result.reason}`);
+        console.warn(`Skipping "${story.headline}": ${result.reason}`);
       }
-    }
+    });
   }
   return enriched;
 }
