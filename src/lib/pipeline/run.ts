@@ -43,11 +43,23 @@ export async function runPipeline(): Promise<PipelineResult> {
     importance: e.story.importance,
     vocabulary: e.vocabulary,
     related: e.related,
+    image_url: e.story.items.find((i) => i.image)?.image ?? null,
   }));
 
-  const { error } = await supabase()
+  let { error } = await supabase()
     .from("articles")
     .upsert(rows, { onConflict: "source_url" });
+  if (error && error.message.includes("image_url")) {
+    console.warn(
+      "articles.image_url column missing — publishing without images. Run in Supabase SQL editor: alter table articles add column if not exists image_url text;"
+    );
+    const withoutImages = rows.map((row) => {
+      const copy: Record<string, unknown> = { ...row };
+      delete copy.image_url;
+      return copy;
+    });
+    ({ error } = await supabase().from("articles").upsert(withoutImages, { onConflict: "source_url" }));
+  }
   if (error) throw new Error(`Supabase upsert failed: ${error.message}`);
 
   console.log(`Published ${rows.length} articles for ${date}.`);

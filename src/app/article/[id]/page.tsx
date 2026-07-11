@@ -33,12 +33,21 @@ export default async function ArticlePage({
         ← Today&apos;s report
       </Link>
 
-      <div className="glass mt-6 rounded-3xl p-6 sm:p-10">
+      <div className="glass mt-6 overflow-hidden rounded-3xl">
+        {article.image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={article.image_url}
+            alt=""
+            className="h-52 w-full object-cover sm:h-80"
+          />
+        )}
+        <div className="p-6 sm:p-10">
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
-          <span className="rounded-full bg-white/80 px-2.5 py-1 text-neutral-600 ring-1 ring-neutral-200/70">
+          <span className="rounded-full bg-white/80 px-2.5 py-1 text-neutral-700 ring-1 ring-neutral-200/70">
             {meta.emoji} {meta.label}
           </span>
-          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700 ring-1 ring-emerald-200/70">
+          <span className="rounded-full border border-neutral-950 bg-white/80 px-2.5 py-1 font-semibold text-neutral-950">
             Level {article.difficulty}
           </span>
           <span className="rounded-full bg-white/80 px-2.5 py-1 text-neutral-500 ring-1 ring-neutral-200/70">
@@ -64,6 +73,7 @@ export default async function ArticlePage({
           summary={article.summary}
           vocabulary={article.vocabulary}
         />
+        </div>
       </div>
 
       {article.why_it_matters && (

@@ -9,6 +9,7 @@ export interface RawItem {
   source: string;
   categoryHint: Category;
   publishedAt: string;
+  image?: string;
 }
 
 const MAX_AGE_HOURS = 36;
@@ -35,8 +36,57 @@ function normalizeTitle(title: string): string {
     .trim();
 }
 
+type MediaEntry = { $?: { url?: string; medium?: string } } | string;
+type MediaField = MediaEntry | MediaEntry[];
+
+interface MediaItem {
+  mediaContent?: MediaField;
+  mediaThumbnail?: MediaField;
+}
+
+function mediaUrl(field: MediaField | undefined): string | undefined {
+  if (!field) return undefined;
+  const entries = Array.isArray(field) ? field : [field];
+  for (const entry of entries) {
+    if (typeof entry === "string") {
+      if (entry.startsWith("http")) return entry;
+      continue;
+    }
+    if (entry.$?.medium && entry.$.medium !== "image") continue;
+    if (entry.$?.url?.startsWith("http")) return entry.$.url;
+  }
+  return undefined;
+}
+
+function upscaleImage(url: string): string {
+  // BBC feeds serve 240px thumbnails; the same path exists at larger widths.
+  return url.replace("ichef.bbci.co.uk/ace/standard/240/", "ichef.bbci.co.uk/ace/standard/976/");
+}
+
+function extractImage(item: Parser.Item & MediaItem): string | undefined {
+  const enclosure = item.enclosure;
+  if (
+    enclosure?.url?.startsWith("http") &&
+    (enclosure.type
+      ? enclosure.type.startsWith("image/")
+      : /\.(jpe?g|png|webp|gif)(\?|$)/i.test(enclosure.url))
+  ) {
+    return upscaleImage(enclosure.url);
+  }
+  const url = mediaUrl(item.mediaContent) ?? mediaUrl(item.mediaThumbnail);
+  return url ? upscaleImage(url) : undefined;
+}
+
 export async function fetchAllFeeds(): Promise<RawItem[]> {
-  const parser = new Parser({ timeout: 15000 });
+  const parser = new Parser<object, MediaItem>({
+    timeout: 15000,
+    customFields: {
+      item: [
+        ["media:content", "mediaContent", { keepArray: true }],
+        ["media:thumbnail", "mediaThumbnail", { keepArray: true }],
+      ],
+    },
+  });
   const cutoff = Date.now() - MAX_AGE_HOURS * 3600 * 1000;
 
   const results = await Promise.allSettled(
@@ -57,6 +107,7 @@ export async function fetchAllFeeds(): Promise<RawItem[]> {
             source: feed.source,
             categoryHint: feed.categoryHint,
             publishedAt: published ?? new Date().toISOString(),
+            image: extractImage(item),
           } satisfies RawItem,
         ];
       });

@@ -53,6 +53,7 @@ export interface Article {
   importance: number;
   vocabulary: VocabEntry[];
   related: string[];
+  image_url: string | null;
   created_at: string;
 }
 

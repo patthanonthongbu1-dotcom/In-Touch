@@ -16,8 +16,12 @@ create table if not exists articles (
   importance int not null default 50,           -- 1–100, higher = more important
   vocabulary jsonb not null default '[]',       -- VocabEntry[] highlighted in the summary
   related jsonb not null default '[]',          -- headlines of merged/related coverage
+  image_url text,                               -- lead image from the source RSS item
   created_at timestamptz not null default now()
 );
+
+-- Migration for databases created before image support (safe to re-run):
+alter table articles add column if not exists image_url text;
 
 create index if not exists articles_date_idx on articles (published_date desc, importance desc);
 create index if not exists articles_category_idx on articles (category);

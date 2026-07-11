@@ -12,7 +12,7 @@ html {
 body {
   min-height: 100vh;
   background-color: #fbfbfc;
-  color: #17181c;
+  color: #0a0a0a;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
