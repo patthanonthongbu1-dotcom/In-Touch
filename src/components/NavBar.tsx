@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { IconBook, IconGear, IconNews, IconRefresh } from "@/components/icons";
 
 const LINKS = [
-  { href: "/", icon: "🗞️", label: "Today" },
-  { href: "/vocabulary", icon: "📚", label: "Vocab" },
-  { href: "/settings", icon: "⚙️", label: "Settings" },
+  { href: "/", icon: IconNews, label: "Today" },
+  { href: "/vocabulary", icon: IconBook, label: "Vocab" },
+  { href: "/settings", icon: IconGear, label: "Settings" },
 ];
 
 export default function NavBar() {
@@ -24,7 +25,10 @@ export default function NavBar() {
   }, []);
 
   const itemBase =
-    "flex flex-col items-center rounded-2xl transition-all duration-300 sm:flex-row sm:gap-1.5";
+    "flex flex-col items-center gap-0.5 rounded-2xl transition-all duration-300 sm:flex-row sm:gap-2";
+  const itemPad = shrunk ? "px-2.5 py-1 sm:px-3.5" : "px-3 py-1.5 sm:px-4 sm:py-2";
+  const labelSize = shrunk ? "text-[9px] sm:text-xs" : "text-[10px] sm:text-sm";
+  const iconSize = shrunk ? 15 : 18;
 
   return (
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 sm:pt-4">
@@ -35,38 +39,35 @@ export default function NavBar() {
       >
         <Link
           href="/"
-          className={`font-extrabold tracking-tight text-neutral-950 transition-all duration-300 hover:opacity-70 ${
-            shrunk ? "text-base" : "text-lg"
-          }`}
+          className="flex items-center gap-2 font-extrabold tracking-tight text-neutral-950 transition-all duration-300 hover:opacity-70"
         >
-          📰<span className="ml-1.5 hidden sm:inline">InTouch</span>
+          <span
+            className={`flex items-center justify-center rounded-xl bg-neutral-950 text-white transition-all duration-300 ${
+              shrunk ? "h-7 w-7" : "h-9 w-9"
+            }`}
+          >
+            <IconNews size={shrunk ? 15 : 19} />
+          </span>
+          <span className={`hidden transition-all duration-300 sm:inline ${shrunk ? "text-base" : "text-lg"}`}>
+            InTouch
+          </span>
         </Link>
 
         <div className="flex items-center gap-0.5 sm:gap-1">
-          {LINKS.map((link) => {
-            const active = pathname === link.href;
+          {LINKS.map(({ href, icon: Icon, label }) => {
+            const active = pathname === href;
             return (
               <Link
-                key={link.href}
-                href={link.href}
-                className={`${itemBase} ${
-                  shrunk ? "px-2.5 py-1 sm:px-3.5" : "px-3 py-1.5 sm:px-4 sm:py-2"
-                } ${
+                key={href}
+                href={href}
+                className={`${itemBase} ${itemPad} ${
                   active
                     ? "bg-neutral-950 text-white shadow-md shadow-neutral-950/20"
                     : "text-neutral-600 hover:bg-white hover:text-neutral-950"
                 }`}
               >
-                <span className={`transition-all duration-300 ${shrunk ? "text-sm" : "text-base"}`}>
-                  {link.icon}
-                </span>
-                <span
-                  className={`font-medium transition-all duration-300 ${
-                    shrunk ? "text-[9px] sm:text-xs" : "text-[10px] sm:text-sm"
-                  }`}
-                >
-                  {link.label}
-                </span>
+                <Icon size={iconSize} className="transition-all duration-300" />
+                <span className={`font-medium transition-all duration-300 ${labelSize}`}>{label}</span>
               </Link>
             );
           })}
@@ -75,22 +76,13 @@ export default function NavBar() {
             type="button"
             aria-label="Refresh news"
             onClick={() => startRefresh(() => router.refresh())}
-            className={`${itemBase} text-neutral-600 hover:bg-white hover:text-neutral-950 ${
-              shrunk ? "px-2.5 py-1 sm:px-3.5" : "px-3 py-1.5 sm:px-4 sm:py-2"
-            }`}
+            className={`${itemBase} ${itemPad} text-neutral-600 hover:bg-white hover:text-neutral-950`}
           >
-            <span
-              className={`transition-all duration-300 ${shrunk ? "text-sm" : "text-base"} ${
-                refreshing ? "animate-spin" : ""
-              }`}
-            >
-              🔄
-            </span>
-            <span
-              className={`font-medium transition-all duration-300 ${
-                shrunk ? "text-[9px] sm:text-xs" : "text-[10px] sm:text-sm"
-              }`}
-            >
+            <IconRefresh
+              size={iconSize}
+              className={`transition-all duration-300 ${refreshing ? "animate-spin" : ""}`}
+            />
+            <span className={`font-medium transition-all duration-300 ${labelSize}`}>
               {refreshing ? "…" : "Refresh"}
             </span>
           </button>

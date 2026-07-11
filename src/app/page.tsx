@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { type Article } from "@/lib/types";
 import NewsExplorer from "@/components/NewsExplorer";
+import TrendingStrip from "@/components/TrendingStrip";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +92,12 @@ export default async function HomePage() {
             ⏱ ~{totalMinutes} min of reading
           </span>
         </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 pb-10">
+        <Suspense fallback={null}>
+          <TrendingStrip />
+        </Suspense>
       </section>
 
       <section className="mx-auto max-w-5xl px-4">

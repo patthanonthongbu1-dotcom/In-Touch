@@ -1,9 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CATEGORIES, CATEGORY_META, type Article, type Category } from "@/lib/types";
 import { useSettings } from "@/lib/settings";
+import {
+  IconBook,
+  IconCheck,
+  IconChevronDown,
+  IconClock,
+  IconSliders,
+  IconSparkles,
+  IconX,
+} from "@/components/icons";
 
 type Filter = "all" | Category;
 
@@ -13,20 +22,16 @@ function Pill({
   active,
   onClick,
   children,
-  small = false,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
-  small?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-full font-medium transition-all duration-200 ${
-        small ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"
-      } ${
+      className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
         active
           ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/20"
           : "glass text-neutral-600 hover:-translate-y-0.5 hover:bg-white hover:text-neutral-950"
@@ -62,7 +67,9 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
       <div className={`flex flex-1 flex-col p-6 ${featured ? "sm:p-9" : ""}`}>
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
           {featured && (
-            <span className="rounded-full bg-neutral-950 px-2.5 py-1 text-white">⚡ Top story</span>
+            <span className="flex items-center gap-1 rounded-full bg-neutral-950 px-2.5 py-1 text-white">
+              <IconSparkles size={12} /> Top story
+            </span>
           )}
           <span className="rounded-full bg-white/80 px-2.5 py-1 text-neutral-700 ring-1 ring-neutral-200/70">
             {meta.emoji} {meta.label}
@@ -89,8 +96,12 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
         </p>
 
         <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-5 text-xs text-neutral-400">
-          <span>⏱ {article.reading_time_min} min</span>
-          <span>📚 {article.vocabulary.length} words</span>
+          <span className="flex items-center gap-1">
+            <IconClock size={12} /> {article.reading_time_min} min
+          </span>
+          <span className="flex items-center gap-1">
+            <IconBook size={12} /> {article.vocabulary.length} words
+          </span>
           <span className="truncate">{article.source}</span>
           <span className="ml-auto flex items-center gap-1 font-semibold text-emerald-600 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 sm:-translate-x-2">
             Read more →
@@ -107,6 +118,19 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
   const [cefr, setCefr] = useState<Set<string>>(new Set());
   const [shortOnly, setShortOnly] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+    function onPointerDown(e: PointerEvent) {
+      if (filtersRef.current && !filtersRef.current.contains(e.target as Node)) {
+        setFiltersOpen(false);
+      }
+    }
+    window.addEventListener("pointerdown", onPointerDown);
+    return () => window.removeEventListener("pointerdown", onPointerDown);
+  }, [filtersOpen]);
 
   const feedArticles = useMemo(
     () => articles.filter((a) => !hiddenCategories.includes(a.category as Category)),
@@ -143,11 +167,11 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
     .filter((a) => !shortOnly || a.reading_time_min <= 2);
 
   const [first, ...rest] = visible;
-  const hasExtraFilters = cefr.size > 0 || shortOnly;
+  const activeFilterCount = cefr.size + (shortOnly ? 1 : 0);
 
   return (
     <div>
-      {/* Category bar: swipe sideways, or expand to see everything */}
+      {/* Category bar: swipe sideways, expand to see everything, filters dropdown */}
       <div className="flex items-start gap-2">
         <div
           className={`flex flex-1 gap-2 ${
@@ -168,48 +192,110 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
             );
           })}
         </div>
+
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-label={expanded ? "Collapse categories" : "Expand categories"}
           title={expanded ? "Collapse" : "Show all categories"}
-          className="glass shrink-0 rounded-full px-3 py-2 text-sm text-neutral-600 transition-all hover:bg-white hover:text-neutral-950"
+          className="glass shrink-0 rounded-full p-2.5 text-neutral-600 transition-all hover:bg-white hover:text-neutral-950"
         >
-          <span className={`inline-block transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}>
-            ⌄
-          </span>
+          <IconChevronDown
+            size={16}
+            className={`transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+          />
         </button>
-      </div>
 
-      {/* Extra filters: CEFR level + quick reads */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-          Filters
-        </span>
-        {CEFR_LEVELS.map((level) => (
-          <Pill key={level} small active={cefr.has(level)} onClick={() => toggleCefr(level)}>
-            {level}
-          </Pill>
-        ))}
-        <Pill small active={shortOnly} onClick={() => setShortOnly((v) => !v)}>
-          ⏱ Quick reads
-        </Pill>
-        {hasExtraFilters && (
+        <div className="relative shrink-0" ref={filtersRef}>
           <button
             type="button"
-            onClick={() => {
-              setCefr(new Set());
-              setShortOnly(false);
-            }}
-            className="text-xs font-medium text-neutral-400 underline-offset-2 transition-colors hover:text-neutral-950 hover:underline"
+            onClick={() => setFiltersOpen((v) => !v)}
+            aria-expanded={filtersOpen}
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+              filtersOpen || activeFilterCount > 0
+                ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/20"
+                : "glass text-neutral-600 hover:bg-white hover:text-neutral-950"
+            }`}
           >
-            Clear ✕
+            <IconSliders size={15} />
+            <span className="hidden sm:inline">Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-neutral-950">
+                {activeFilterCount}
+              </span>
+            )}
           </button>
-        )}
+
+          {filtersOpen && (
+            <div className="glass-strong absolute right-0 z-30 mt-2 w-64 rounded-3xl p-5 shadow-xl">
+              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                Reading level
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {CEFR_LEVELS.map((level) => {
+                  const on = cefr.has(level);
+                  return (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => toggleCefr(level)}
+                      className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                        on
+                          ? "bg-neutral-950 text-white"
+                          : "border border-neutral-300 bg-white/70 text-neutral-600 hover:border-neutral-950 hover:text-neutral-950"
+                      }`}
+                    >
+                      {on && <IconCheck size={11} />}
+                      {level}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                Length
+              </p>
+              <button
+                type="button"
+                onClick={() => setShortOnly((v) => !v)}
+                className={`mt-2.5 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                  shortOnly
+                    ? "bg-neutral-950 text-white"
+                    : "border border-neutral-300 bg-white/70 text-neutral-600 hover:border-neutral-950 hover:text-neutral-950"
+                }`}
+              >
+                <IconClock size={11} /> Quick reads (≤ 2 min)
+              </button>
+
+              <div className="mt-5 flex items-center justify-between border-t border-neutral-200/70 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCefr(new Set());
+                    setShortOnly(false);
+                  }}
+                  disabled={activeFilterCount === 0}
+                  className="flex items-center gap-1 text-xs font-medium text-neutral-400 transition-colors hover:text-neutral-950 disabled:opacity-40"
+                >
+                  <IconX size={11} /> Clear all
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(false)}
+                  className="rounded-full bg-neutral-950 px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-neutral-800"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
-        {first && <ArticleCard article={first} featured={category === "all" && !hasExtraFilters} />}
+        {first && (
+          <ArticleCard article={first} featured={category === "all" && activeFilterCount === 0} />
+        )}
         {rest.map((article) => (
           <ArticleCard key={article.id} article={article} />
         ))}
