@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { VocabEntry } from "@/lib/types";
 import { IconX } from "@/components/icons";
 
@@ -53,7 +54,6 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
   const [anchor, setAnchor] = useState<Anchor | null>(null);
   const [savedWords, setSavedWords] = useState<Set<string>>(new Set());
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const containerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -76,13 +76,18 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
   }, [selected]);
 
   function handleWordClick(entry: VocabEntry, e: React.MouseEvent<HTMLButtonElement>) {
-    const button = e.currentTarget;
-    const containerWidth = containerRef.current?.clientWidth ?? 360;
-    const width = Math.min(360, containerWidth);
-    const wordCenter = button.offsetLeft + button.offsetWidth / 2;
-    const left = Math.max(0, Math.min(wordCenter - width / 2, containerWidth - width));
+    // Position in page coordinates and render through a portal on <body>,
+    // so no ancestor's overflow clipping can cut the toolbox off.
+    const rect = e.currentTarget.getBoundingClientRect();
+    const margin = 12;
+    const width = Math.min(360, window.innerWidth - margin * 2);
+    const wordCenter = rect.left + rect.width / 2 + window.scrollX;
+    const left = Math.max(
+      window.scrollX + margin,
+      Math.min(wordCenter - width / 2, window.scrollX + window.innerWidth - width - margin)
+    );
     setAnchor({
-      top: button.offsetTop + button.offsetHeight + 10,
+      top: rect.bottom + window.scrollY + 10,
       left,
       width,
       arrow: Math.max(20, Math.min(wordCenter - left, width - 20)),
@@ -114,7 +119,7 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <div>
       <p className="mt-6 text-lg leading-8 text-neutral-800">
         {segments.map((segment, i) =>
           segment.entry ? (
@@ -147,12 +152,14 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
         </p>
       )}
 
-      {selected && anchor && (
+      {selected &&
+        anchor &&
+        createPortal(
         <div
           ref={popoverRef}
           key={selected.word}
           style={{ top: anchor.top, left: anchor.left, width: anchor.width }}
-          className="animate-pop-in glass-solid absolute z-30 rounded-3xl p-5 max-sm:fixed! max-sm:inset-x-3! max-sm:top-auto! max-sm:bottom-3! max-sm:w-auto!"
+          className="animate-pop-in glass-solid absolute z-50 rounded-3xl p-5 max-sm:fixed! max-sm:inset-x-3! max-sm:top-auto! max-sm:bottom-3! max-sm:w-auto!"
         >
           {/* Arrow pointing at the tapped word */}
           <span
@@ -217,7 +224,8 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
               ))}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,11 +1,11 @@
 function Bar({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-full bg-neutral-950/10 ${className}`} />;
+  return <div className={`shimmer rounded-full ${className}`} />;
 }
 
 function CardSkeleton({ featured = false }: { featured?: boolean }) {
   return (
     <div className={`glass overflow-hidden rounded-3xl ${featured ? "sm:col-span-2" : ""}`}>
-      <div className={`animate-pulse bg-neutral-950/10 ${featured ? "h-52 sm:h-72" : "h-40"}`} />
+      <div className={`shimmer ${featured ? "h-52 sm:h-72" : "h-40"}`} />
       <div className="space-y-3 p-6">
         <div className="flex gap-2">
           <Bar className="h-6 w-24" />

@@ -275,11 +275,11 @@ export default function VocabularyPage() {
           {Array.from({ length: 6 }, (_, i) => (
             <li key={i} className="glass space-y-3 rounded-3xl p-5">
               <div className="flex items-center gap-2">
-                <div className="h-5 w-28 animate-pulse rounded-full bg-neutral-950/10" />
-                <div className="h-5 w-10 animate-pulse rounded-full bg-neutral-950/10" />
+                <div className="shimmer h-5 w-28 rounded-full" />
+                <div className="shimmer h-5 w-10 rounded-full" />
               </div>
-              <div className="h-4 w-full animate-pulse rounded-full bg-neutral-950/10" />
-              <div className="h-4 w-2/3 animate-pulse rounded-full bg-neutral-950/10" />
+              <div className="shimmer h-4 w-full rounded-full" />
+              <div className="shimmer h-4 w-2/3 rounded-full" />
             </li>
           ))}
         </ul>

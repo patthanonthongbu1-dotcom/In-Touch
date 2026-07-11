@@ -20,10 +20,24 @@ export default function NavBar() {
   const [refreshing, startRefresh] = useTransition();
 
   useEffect(() => {
-    const onScroll = () => setShrunk(window.scrollY > 32);
-    onScroll();
+    let raf = 0;
+    // Hysteresis: shrink past 96px, only expand again above 16px. A single
+    // threshold makes the bar oscillate, because shrinking changes the page
+    // height and can move scrollY back across the same line.
+    const update = () => {
+      raf = 0;
+      const y = window.scrollY;
+      setShrunk((prev) => (prev ? y > 16 : y > 96));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 
   const itemBase =

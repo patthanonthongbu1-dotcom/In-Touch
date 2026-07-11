@@ -107,6 +107,31 @@ body::before {
   animation-play-state: paused;
 }
 
+/* Shimmering skeleton placeholders */
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgb(10 10 10 / 0.07);
+}
+
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.75), transparent);
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
 /* Quick spring-in for the vocabulary toolbox popover */
 @keyframes pop-in {
   from {
