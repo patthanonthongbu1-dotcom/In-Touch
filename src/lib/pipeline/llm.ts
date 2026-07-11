@@ -81,6 +81,8 @@ async function callAnthropic<S extends z.ZodType>({ system, user, schema }: Stru
 
 function isRetryable(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
+  // A per-DAY quota won't recover within a retry window — fail fast.
+  if (/PerDay/i.test(message)) return false;
   return /429|RESOURCE_EXHAUSTED|rate.?limit|overloaded|529|503/i.test(message);
 }
 
