@@ -20,20 +20,27 @@ const CEFR_LEVELS = ["B1", "B2", "C1", "C2"] as const;
 
 function Pill({
   active,
+  hasIndicator,
   onClick,
+  dataKey,
   children,
 }: {
   active: boolean;
+  hasIndicator: boolean;
   onClick: () => void;
+  dataKey: string;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
+      data-pill={dataKey}
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-150 ${
+      className={`relative z-10 shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
         active
-          ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/20"
+          ? hasIndicator
+            ? "text-white"
+            : "bg-neutral-950 text-white"
           : "glass text-neutral-600 hover:-translate-y-0.5 hover:bg-white hover:text-neutral-950"
       }`}
     >
@@ -47,9 +54,7 @@ function ArticleCard({ article, featured = false }: { article: Article; featured
   return (
     <Link
       href={`/article/${article.id}`}
-      className={`group glass relative flex flex-col overflow-hidden rounded-3xl ring-1 ring-transparent transition-all duration-200 hover:-translate-y-1.5 hover:bg-white/85 hover:shadow-[0_28px_56px_-24px_rgb(10_10_10/0.3)] hover:ring-neutral-950/25 ${
-        featured ? "sm:col-span-2" : ""
-      }`}
+      className="group glass relative flex h-full flex-col overflow-hidden rounded-3xl ring-1 ring-transparent transition-all duration-200 hover:-translate-y-1.5 hover:bg-white/85 hover:shadow-[0_28px_56px_-24px_rgb(10_10_10/0.3)] hover:ring-neutral-950/25"
     >
       {article.image_url && (
         <div className={`w-full overflow-hidden ${featured ? "h-52 sm:h-80" : "h-40 sm:h-44"}`}>
@@ -120,6 +125,13 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
   const [expanded, setExpanded] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const [indicator, setIndicator] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -152,6 +164,31 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
       ? "all"
       : activeCategory;
 
+  // Slide the black indicator blob under whichever pill is active.
+  useEffect(() => {
+    const activePill = () =>
+      barRef.current?.querySelector<HTMLButtonElement>(`[data-pill="${CSS.escape(category)}"]`);
+    const measure = () => {
+      const el = activePill();
+      if (!el) return;
+      setIndicator({
+        left: el.offsetLeft,
+        top: el.offsetTop,
+        width: el.offsetWidth,
+        height: el.offsetHeight,
+      });
+    };
+    const raf = requestAnimationFrame(() => {
+      measure();
+      activePill()?.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
+    });
+    window.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", measure);
+    };
+  }, [category, expanded, presentCategories.length, feedArticles.length]);
+
   function toggleCefr(level: string) {
     setCefr((prev) => {
       const next = new Set(prev);
@@ -166,7 +203,6 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
     .filter((a) => cefr.size === 0 || cefr.has(a.difficulty))
     .filter((a) => !shortOnly || a.reading_time_min <= 2);
 
-  const [first, ...rest] = visible;
   const activeFilterCount = cefr.size + (shortOnly ? 1 : 0);
 
   return (
@@ -174,19 +210,38 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
       {/* Category bar: swipe sideways, expand to see everything, filters dropdown */}
       <div className="flex items-start gap-2">
         <div
-          className={`flex flex-1 gap-2 ${
+          ref={barRef}
+          className={`relative flex flex-1 gap-2 ${
             expanded
               ? "flex-wrap"
               : "pill-scroll -mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
           }`}
         >
-          <Pill active={category === "all"} onClick={() => setActiveCategory("all")}>
+          {indicator && (
+            <span
+              aria-hidden
+              style={indicator}
+              className="absolute z-0 rounded-full bg-neutral-950 shadow-lg shadow-neutral-950/20 transition-all duration-300 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
+            />
+          )}
+          <Pill
+            active={category === "all"}
+            hasIndicator={indicator !== null}
+            dataKey="all"
+            onClick={() => setActiveCategory("all")}
+          >
             ✨ All · {feedArticles.length}
           </Pill>
           {presentCategories.map((cat) => {
             const meta = CATEGORY_META[cat];
             return (
-              <Pill key={cat} active={category === cat} onClick={() => setActiveCategory(cat)}>
+              <Pill
+                key={cat}
+                active={category === cat}
+                hasIndicator={indicator !== null}
+                dataKey={cat}
+                onClick={() => setActiveCategory(cat)}
+              >
                 {meta.emoji} {meta.label} · {counts.get(cat)}
               </Pill>
             );
@@ -292,13 +347,22 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-5 sm:grid-cols-2">
-        {first && (
-          <ArticleCard article={first} featured={category === "all" && activeFilterCount === 0} />
-        )}
-        {rest.map((article) => (
-          <ArticleCard key={article.id} article={article} />
-        ))}
+      <div
+        key={`${category}|${[...cefr].sort().join(",")}|${shortOnly}`}
+        className="mt-6 grid gap-5 sm:grid-cols-2"
+      >
+        {visible.map((article, i) => {
+          const featured = i === 0 && category === "all" && activeFilterCount === 0;
+          return (
+            <div
+              key={article.id}
+              className={`animate-card-in ${featured ? "sm:col-span-2" : ""}`}
+              style={{ animationDelay: `${Math.min(i * 45, 400)}ms` }}
+            >
+              <ArticleCard article={article} featured={featured} />
+            </div>
+          );
+        })}
       </div>
 
       {visible.length === 0 && (

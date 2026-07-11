@@ -293,13 +293,17 @@ export default function VocabularyPage() {
         </p>
       )}
 
-      <ul className="mt-6 grid gap-4 sm:grid-cols-2">
-        {visible.map((item) => {
+      <ul
+        key={`${favoritesOnly}|${[...cefr].sort().join(",")}|${sort}`}
+        className="mt-6 grid gap-4 sm:grid-cols-2"
+      >
+        {visible.map((item, i) => {
           const open = openId === item.id;
           return (
             <li
               key={item.id}
-              className={`glass rounded-3xl p-5 transition-all duration-200 hover:bg-white/85 hover:shadow-[0_20px_44px_-24px_rgb(10_10_10/0.25)] ${
+              style={{ animationDelay: `${Math.min(i * 35, 350)}ms` }}
+              className={`animate-card-in glass rounded-3xl p-5 transition-all duration-200 hover:bg-white/85 hover:shadow-[0_20px_44px_-24px_rgb(10_10_10/0.25)] ${
                 open ? "sm:col-span-2" : ""
               }`}
             >
