@@ -6,11 +6,13 @@ import type { Category } from "./types";
 export interface AppSettings {
   hiddenCategories: Category[];
   pipelineSecret: string;
+  tutorialDone: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   hiddenCategories: [],
   pipelineSecret: "",
+  tutorialDone: false,
 };
 
 const STORAGE_KEY = "intouch-settings";

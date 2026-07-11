@@ -119,6 +119,20 @@ export default function SettingsPage() {
           </p>
         )}
       </section>
+
+      <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
+        <h2 className="text-lg font-bold text-neutral-950">👋 New here?</h2>
+        <p className="mt-1 text-sm text-neutral-500">
+          Replay the quick intro tour whenever you like.
+        </p>
+        <button
+          type="button"
+          onClick={() => saveSettings({ ...settings, tutorialDone: false })}
+          className="mt-4 rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-950/20 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-800"
+        >
+          Show tutorial again
+        </button>
+      </section>
     </div>
   );
 }
