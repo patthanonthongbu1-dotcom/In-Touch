@@ -92,25 +92,55 @@ export default function NavBar() {
           })}
 
           {user ? (
-            <Link
-              href="/profile"
-              aria-label="Your profile"
-              title={user.email ?? "Profile"}
-              className={`${itemBase} ${itemPad} ${
-                pathname === "/profile"
-                  ? "bg-neutral-950 text-white shadow-md shadow-neutral-950/20"
-                  : "text-neutral-600 hover:bg-white hover:text-neutral-950"
-              }`}
-            >
-              <span
-                className={`flex items-center justify-center rounded-full bg-neutral-950 font-bold text-white transition-all duration-200 ${
-                  shrunk ? "h-[15px] w-[15px] text-[8px]" : "h-[18px] w-[18px] text-[10px]"
-                }`}
-              >
-                {(user.email ?? "?").charAt(0).toUpperCase()}
-              </span>
-              <span className={`font-medium transition-all duration-200 ${labelSize}`}>Me</span>
-            </Link>
+            (() => {
+              const meta = (user.user_metadata ?? {}) as Record<string, string | undefined>;
+              const firstName =
+                (meta.full_name ?? user.email?.split("@")[0] ?? "Me").trim().split(/\s+/)[0];
+              const avatarSize = shrunk ? "h-[15px] w-[15px]" : "h-[18px] w-[18px]";
+              return (
+                <Link
+                  href="/profile"
+                  aria-label="Your profile"
+                  title={user.email ?? "Profile"}
+                  className={`${itemBase} ${itemPad} ${
+                    pathname === "/profile"
+                      ? "bg-neutral-950 text-white shadow-md shadow-neutral-950/20"
+                      : "text-neutral-600 hover:bg-white hover:text-neutral-950"
+                  }`}
+                >
+                  {meta.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={meta.avatar_url}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                      className={`rounded-full object-cover ring-1 ring-white/70 transition-all duration-200 ${avatarSize}`}
+                    />
+                  ) : meta.avatar_emoji ? (
+                    <span
+                      className={`flex items-center justify-center transition-all duration-200 ${
+                        shrunk ? "text-[13px]" : "text-base"
+                      }`}
+                    >
+                      {meta.avatar_emoji}
+                    </span>
+                  ) : (
+                    <span
+                      className={`flex items-center justify-center rounded-full bg-neutral-950 font-bold text-white transition-all duration-200 ${avatarSize} ${
+                        shrunk ? "text-[8px]" : "text-[10px]"
+                      }`}
+                    >
+                      {firstName.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span
+                    className={`max-w-16 truncate whitespace-nowrap font-medium transition-all duration-200 sm:max-w-24 ${labelSize}`}
+                  >
+                    {firstName}
+                  </span>
+                </Link>
+              );
+            })()
           ) : (
             <Link
               href="/login"

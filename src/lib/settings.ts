@@ -8,6 +8,8 @@ export interface AppSettings {
   pipelineSecret: string;
   tutorialDone: boolean;
   readArticles: string[];
+  cefrLevel: string | null; // estimated by the level test
+  cefrTestedAt: string | null;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -15,6 +17,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   pipelineSecret: "",
   tutorialDone: false,
   readArticles: [],
+  cefrLevel: null,
+  cefrTestedAt: null,
 };
 
 const STORAGE_KEY = "intouch-settings";

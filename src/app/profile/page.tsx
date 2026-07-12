@@ -4,12 +4,14 @@ import { supabase } from "@/lib/supabase";
 import { computeStreak, todayBangkok } from "@/lib/streak";
 import ProfileEditor from "@/components/ProfileEditor";
 import SignOutButton from "@/components/SignOutButton";
+import Link from "next/link";
 import {
   IconBook,
   IconCheck,
   IconFlame,
   IconNews,
   IconPencil,
+  IconSparkles,
   IconStar,
 } from "@/components/icons";
 
@@ -31,10 +33,24 @@ export default async function ProfilePage() {
   if (!user) redirect("/login");
 
   const db = supabase();
-  const [readsRes, vocabRes] = await Promise.all([
+  const [readsRes, vocabRes, settingsRes] = await Promise.all([
     db.from("article_reads").select("read_date").eq("user_id", user.id),
     db.from("vocab_bank").select("favorite, review_count").eq("user_id", user.id),
+    db.from("user_settings").select("settings").eq("user_id", user.id).maybeSingle(),
   ]);
+
+  const synced = (settingsRes.data?.settings ?? {}) as {
+    cefrLevel?: string | null;
+    cefrTestedAt?: string | null;
+  };
+  const cefrLevel = synced.cefrLevel ?? null;
+  const cefrTestedAt = synced.cefrTestedAt
+    ? new Date(synced.cefrTestedAt).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
 
   const readDates = (readsRes.data ?? []).map((r) => r.read_date as string);
   const today = todayBangkok();
@@ -85,8 +101,13 @@ export default async function ProfilePage() {
             </span>
           )}
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-extrabold tracking-tight text-neutral-950 sm:text-3xl">
-              {displayName}
+            <h1 className="flex items-center gap-2.5 text-2xl font-extrabold tracking-tight text-neutral-950 sm:text-3xl">
+              <span className="truncate">{displayName}</span>
+              {cefrLevel && (
+                <span className="shrink-0 rounded-full border border-neutral-950 px-2.5 py-0.5 text-xs font-bold text-neutral-950">
+                  {cefrLevel}
+                </span>
+              )}
             </h1>
             <p className="mt-1 truncate text-sm text-neutral-500">{user.email}</p>
             <p className="mt-0.5 text-xs text-neutral-400">Reading since {memberSince}</p>
@@ -185,6 +206,28 @@ export default async function ProfilePage() {
             <p className="mt-0.5 text-xs font-medium text-neutral-400">{stat.label}</p>
           </div>
         ))}
+      </section>
+
+      {/* English level */}
+      <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-950">
+              <IconSparkles size={17} /> English level
+            </h2>
+            <p className="mt-1 text-sm text-neutral-500">
+              {cefrLevel
+                ? `Estimated ${cefrLevel} · tested ${cefrTestedAt}`
+                : "Take a quick word test to estimate your CEFR reading level."}
+            </p>
+          </div>
+          <Link
+            href="/review"
+            className="shrink-0 rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-950/20 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-800"
+          >
+            {cefrLevel ? "Retake the test" : "Test my level"}
+          </Link>
+        </div>
       </section>
 
       {/* Customization */}
