@@ -48,7 +48,9 @@ export default function AccountSync() {
           ...local,
           ...((server ?? {}) as Partial<AppSettings>),
           pipelineSecret: local.pipelineSecret, // never leaves this device
-          tutorialDone: local.tutorialDone || Boolean(server?.tutorialDone),
+          // A brand-new account (no synced settings yet) gets the welcome
+          // tour once, right after joining.
+          tutorialDone: server ? local.tutorialDone || Boolean(server.tutorialDone) : false,
           readArticles: [...new Set([...local.readArticles, ...serverIds])],
         };
 

@@ -20,6 +20,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Profile — InTouch" };
 
 const DAY_MS = 86_400_000;
+const CEFR_BANDS = ["A2", "B1", "B2", "C1", "C2"];
 
 function lastDays(today: string, count: number): string[] {
   const end = Date.parse(`${today}T00:00:00Z`);
@@ -223,10 +224,38 @@ export default async function ProfilePage() {
           </div>
           <Link
             href="/review"
-            className="shrink-0 rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-950/20 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-800"
+            className="shrink-0 rounded-full border border-neutral-950 bg-transparent px-5 py-2.5 text-sm font-semibold text-neutral-950 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-950 hover:text-white"
           >
             {cefrLevel ? "Retake the test" : "Test my level"}
           </Link>
+        </div>
+
+        {/* CEFR ladder — steps rise toward C2, filled up to the tested level */}
+        <div className="mt-6 flex items-end gap-2">
+          {CEFR_BANDS.map((band, i) => {
+            const levelIndex = cefrLevel ? CEFR_BANDS.indexOf(cefrLevel) : -1;
+            const reached = i <= levelIndex;
+            const isCurrent = i === levelIndex;
+            return (
+              <div key={band} className="flex flex-1 flex-col items-center gap-1.5">
+                <div
+                  style={{ height: `${22 + i * 10}px` }}
+                  className={`w-full rounded-lg transition-all ${
+                    reached
+                      ? "bg-neutral-950 shadow-md shadow-neutral-950/20"
+                      : "bg-neutral-950/[0.07] ring-1 ring-neutral-200/70"
+                  } ${isCurrent ? "ring-2 ring-emerald-500 ring-offset-2 ring-offset-white/60" : ""}`}
+                />
+                <span
+                  className={`text-[10px] font-bold ${
+                    isCurrent ? "text-neutral-950" : reached ? "text-neutral-500" : "text-neutral-300"
+                  }`}
+                >
+                  {band}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </section>
 
