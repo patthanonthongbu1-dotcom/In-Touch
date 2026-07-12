@@ -82,7 +82,7 @@ export default function SettingsPage() {
               type="button"
               onClick={signOut}
               disabled={signingOut}
-              className="mt-4 rounded-full border border-neutral-300 bg-white/70 px-5 py-2.5 text-sm font-semibold text-neutral-700 transition-all duration-150 hover:border-neutral-950 hover:text-neutral-950 disabled:opacity-50"
+              className="mt-4 rounded-full border border-neutral-950 bg-transparent px-5 py-2.5 text-sm font-semibold text-neutral-950 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-950 hover:text-white disabled:opacity-50"
             >
               {signingOut ? "Signing out…" : "Sign out"}
             </button>
@@ -97,7 +97,7 @@ export default function SettingsPage() {
             {!userLoading && (
               <Link
                 href="/login"
-                className="mt-4 inline-block rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-950/20 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-800"
+                className="mt-4 inline-block rounded-full border border-neutral-950 bg-transparent px-5 py-2.5 text-sm font-semibold text-neutral-950 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-950 hover:text-white"
               >
                 Sign in or create an account
               </Link>
@@ -159,7 +159,7 @@ export default function SettingsPage() {
             type="button"
             onClick={runPipeline}
             disabled={pipelineState === "running"}
-            className="rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-950/20 transition-all hover:-translate-y-0.5 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-neutral-950 bg-transparent px-5 py-2.5 text-sm font-semibold text-neutral-950 transition-all hover:-translate-y-0.5 hover:bg-neutral-950 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pipelineState === "running" ? "Finding news…" : "Find more news"}
           </button>
@@ -187,7 +187,7 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={() => saveSettings({ ...settings, tutorialDone: false })}
-          className="mt-4 rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-950/20 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-800"
+          className="mt-4 rounded-full border border-neutral-950 bg-transparent px-5 py-2.5 text-sm font-semibold text-neutral-950 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-950 hover:text-white"
         >
           Show tutorial again
         </button>
