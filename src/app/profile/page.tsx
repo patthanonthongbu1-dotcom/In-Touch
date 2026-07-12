@@ -4,6 +4,14 @@ import { supabase } from "@/lib/supabase";
 import { computeStreak, todayBangkok } from "@/lib/streak";
 import ProfileEditor from "@/components/ProfileEditor";
 import SignOutButton from "@/components/SignOutButton";
+import {
+  IconBook,
+  IconCheck,
+  IconFlame,
+  IconNews,
+  IconPencil,
+  IconStar,
+} from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +44,15 @@ export default async function ProfilePage() {
 
   const vocab = vocabRes.data ?? [];
   const stats = [
-    { emoji: "🔥", value: streak, label: streak === 1 ? "day streak" : "day streak" },
-    { emoji: "📖", value: readDates.length, label: "stories read" },
-    { emoji: "📚", value: vocab.length, label: "words saved" },
-    { emoji: "⭐", value: vocab.filter((v) => v.favorite).length, label: "favorites" },
-    { emoji: "✅", value: vocab.reduce((sum, v) => sum + (v.review_count ?? 0), 0), label: "reviews done" },
+    { icon: IconFlame, value: streak, label: "day streak" },
+    { icon: IconNews, value: readDates.length, label: "stories read" },
+    { icon: IconBook, value: vocab.length, label: "words saved" },
+    { icon: IconStar, value: vocab.filter((v) => v.favorite).length, label: "favorites" },
+    {
+      icon: IconCheck,
+      value: vocab.reduce((sum, v) => sum + (v.review_count ?? 0), 0),
+      label: "reviews done",
+    },
   ];
 
   const meta = (user.user_metadata ?? {}) as Record<string, string | undefined>;
@@ -108,7 +120,7 @@ export default async function ProfilePage() {
                           }`
                     }`}
                   >
-                    {done ? "✓" : ""}
+                    {done && <IconCheck size={13} />}
                   </span>
                   <span className={`text-[10px] font-medium ${isToday ? "text-neutral-950" : "text-neutral-400"}`}>
                     {letter}
@@ -124,8 +136,8 @@ export default async function ProfilePage() {
       <section className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
         {stats.map((stat) => (
           <div key={stat.label} className="glass rounded-3xl p-4 text-center sm:p-5">
-            <p aria-hidden className="text-xl">{stat.emoji}</p>
-            <p className="mt-1 text-2xl font-extrabold tracking-tight text-neutral-950 sm:text-3xl">
+            <stat.icon aria-hidden size={20} className="mx-auto text-neutral-400" />
+            <p className="mt-1.5 text-2xl font-extrabold tracking-tight text-neutral-950 sm:text-3xl">
               {stat.value}
             </p>
             <p className="mt-0.5 text-xs font-medium text-neutral-400">{stat.label}</p>
@@ -135,7 +147,9 @@ export default async function ProfilePage() {
 
       {/* Customization */}
       <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
-        <h2 className="text-lg font-bold text-neutral-950">✏️ Make it yours</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-950">
+          <IconPencil size={17} /> Make it yours
+        </h2>
         <p className="mt-1 text-sm text-neutral-500">
           {avatarUrl
             ? "Your photo comes from your Google account; pick the name you want to see."

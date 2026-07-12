@@ -3,6 +3,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth";
 import AuthPanel from "@/components/AuthPanel";
+import { IconBook, IconFlame, IconGear } from "@/components/icons";
 import logo from "@/app/In0Touch.png";
 
 export const dynamic = "force-dynamic";
@@ -10,9 +11,9 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Sign in — InTouch" };
 
 const PERKS = [
-  { emoji: "📚", title: "Your vocabulary bank", text: "Every word you save follows you to any device." },
-  { emoji: "🔥", title: "Reading streak", text: "Read at least one story a day and watch it grow." },
-  { emoji: "⚙️", title: "Synced settings", text: "Your feed preferences, everywhere you sign in." },
+  { icon: IconBook, title: "Your vocabulary bank", text: "Every word you save follows you to any device." },
+  { icon: IconFlame, title: "Reading streak", text: "Read at least one story a day and watch it grow." },
+  { icon: IconGear, title: "Synced settings", text: "Your feed preferences, everywhere you sign in." },
 ];
 
 export default async function LoginPage() {
@@ -39,8 +40,8 @@ export default async function LoginPage() {
           <ul className="space-y-4">
             {PERKS.map((perk) => (
               <li key={perk.title} className="flex items-start gap-3">
-                <span className="glass flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg">
-                  {perk.emoji}
+                <span className="glass flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-neutral-700">
+                  <perk.icon size={18} />
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-neutral-950">{perk.title}</p>

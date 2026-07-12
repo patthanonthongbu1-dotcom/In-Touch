@@ -88,12 +88,18 @@ function ArticleCard({
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          /* Placeholder for stories without a feed image — content TBD. */
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-neutral-100 via-white/60 to-neutral-200/80">
+          /* Designed stand-in for stories without a feed image. */
+          <div
+            className="relative flex h-full w-full items-center justify-center"
+            style={{
+              background:
+                "radial-gradient(120% 90% at 20% 0%, rgb(16 185 129 / 0.14), transparent 60%), radial-gradient(120% 90% at 90% 100%, rgb(56 189 248 / 0.14), transparent 60%), linear-gradient(135deg, #f5f5f6, #ececee)",
+            }}
+          >
             <span
               aria-hidden
-              className={`select-none opacity-25 grayscale transition-transform duration-300 group-hover:scale-110 ${
-                featured ? "text-6xl sm:text-7xl" : "text-4xl sm:text-5xl"
+              className={`flex items-center justify-center rounded-full bg-white/85 shadow-[0_10px_28px_-14px_rgb(10_10_10/0.35)] ring-1 ring-white transition-transform duration-300 group-hover:scale-110 ${
+                featured ? "h-24 w-24 text-5xl" : "h-14 w-14 text-2xl sm:h-16 sm:w-16 sm:text-3xl"
               }`}
             >
               {meta.emoji}

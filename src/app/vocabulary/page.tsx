@@ -5,12 +5,14 @@ import type { VocabBankItem } from "@/lib/types";
 import {
   IconBook,
   IconCheck,
+  IconChevronDown,
   IconSearch,
   IconSliders,
   IconStar,
   IconTrash,
   IconX,
 } from "@/components/icons";
+import VocabCardBody from "@/components/VocabCardBody";
 
 const CEFR_LEVELS = ["A2", "B1", "B2", "C1", "C2"] as const;
 
@@ -311,64 +313,64 @@ export default function VocabularyPage() {
                 <button
                   type="button"
                   onClick={() => setOpenId(open ? null : item.id)}
-                  className="min-w-0 text-left"
+                  aria-expanded={open}
+                  className="min-w-0 flex-1 text-left"
                 >
-                  <p className="flex flex-wrap items-center gap-2 font-bold text-neutral-950">
-                    {item.word}
-                    <span className="text-xs font-normal text-neutral-500">
-                      {item.card.partOfSpeech}
+                  <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span
+                      className={`font-extrabold tracking-tight text-neutral-950 ${
+                        open ? "text-3xl" : "text-xl"
+                      }`}
+                    >
+                      {item.word}
+                    </span>
+                    <span className="text-xs text-neutral-500">
+                      {item.card.pronunciation} · {item.card.partOfSpeech}
                     </span>
                     <span className="rounded-full border border-neutral-950 px-2 py-0.5 text-[10px] font-bold text-neutral-950">
                       {item.card.cefr}
                     </span>
                   </p>
-                  <p className="mt-1 text-sm leading-relaxed text-neutral-600">
-                    {item.card.meaning}
-                  </p>
+                  {!open && (
+                    <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-neutral-600">
+                      {item.card.meaning}
+                    </p>
+                  )}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => toggleFavorite(item)}
-                  aria-label="Toggle favorite"
-                  title={item.favorite ? "Unfavorite" : "Favorite"}
-                  className={`shrink-0 rounded-full p-2 transition-all hover:bg-white ${
-                    item.favorite ? "text-amber-400" : "text-neutral-300 hover:text-amber-400"
-                  }`}
-                >
-                  <IconStar size={18} filled={item.favorite} />
-                </button>
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-neutral-400">
-                <span>learned {new Date(item.learned_at).toLocaleDateString()}</span>
+                <div className="flex shrink-0 items-center">
+                  <button
+                    type="button"
+                    onClick={() => toggleFavorite(item)}
+                    aria-label="Toggle favorite"
+                    title={item.favorite ? "Unfavorite" : "Favorite"}
+                    className={`rounded-full p-2 transition-all hover:bg-white ${
+                      item.favorite ? "text-amber-400" : "text-neutral-300 hover:text-amber-400"
+                    }`}
+                  >
+                    <IconStar size={18} filled={item.favorite} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(open ? null : item.id)}
+                    aria-label={open ? "Collapse" : "Expand"}
+                    className="rounded-full p-2 text-neutral-300 transition-all hover:bg-white hover:text-neutral-950"
+                  >
+                    <IconChevronDown
+                      size={16}
+                      className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                </div>
               </div>
 
               {open && (
-                <div className="mt-4 space-y-2 border-t border-neutral-200/70 pt-4 text-sm">
-                  {item.card.thai && (
-                    <p>
-                      <span className="font-semibold">Thai:</span> {item.card.thai}
-                    </p>
-                  )}
-                  <p className="italic text-neutral-600">&ldquo;{item.card.example}&rdquo;</p>
-                  {item.card.synonyms.length > 0 && (
-                    <p>
-                      <span className="font-semibold">Synonyms:</span>{" "}
-                      {item.card.synonyms.join(", ")}
-                    </p>
-                  )}
-                  {item.card.collocations.length > 0 && (
-                    <p>
-                      <span className="font-semibold">Collocations:</span>{" "}
-                      {item.card.collocations.join(" · ")}
-                    </p>
-                  )}
-                  {item.article_headline && (
-                    <p className="text-xs text-neutral-400">
-                      from &ldquo;{item.article_headline}&rdquo;
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-2 pt-2">
+                <div className="mt-4 border-t border-neutral-200/70 pt-4">
+                  <VocabCardBody entry={item.card} expanded />
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200/70 pt-3">
+                    <span className="text-xs text-neutral-400">
+                      learned {new Date(item.learned_at).toLocaleDateString()}
+                      {item.article_headline && <> · from &ldquo;{item.article_headline}&rdquo;</>}
+                    </span>
                     <button
                       type="button"
                       onClick={() => remove(item)}

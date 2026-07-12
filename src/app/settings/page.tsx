@@ -7,6 +7,13 @@ import { CATEGORIES, CATEGORY_META, type Category } from "@/lib/types";
 import { saveSettings, useSettings } from "@/lib/settings";
 import { useUser } from "@/lib/use-user";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import {
+  IconGear,
+  IconRefresh,
+  IconSliders,
+  IconSparkles,
+  IconUser,
+} from "@/components/icons";
 
 export default function SettingsPage() {
   const settings = useSettings();
@@ -54,8 +61,8 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pt-12">
-      <h1 className="text-3xl font-extrabold tracking-tight text-neutral-950 sm:text-4xl">
-        ⚙️ Settings
+      <h1 className="flex items-center gap-3 text-3xl font-extrabold tracking-tight text-neutral-950 sm:text-4xl">
+        <IconGear size={30} /> Settings
       </h1>
       <p className="mt-2 text-sm text-neutral-500 sm:text-base">
         {user
@@ -64,7 +71,7 @@ export default function SettingsPage() {
       </p>
 
       <section className="glass mt-8 rounded-3xl p-6 sm:p-8">
-        <h2 className="text-lg font-bold text-neutral-950">👤 Account</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-950"><IconUser size={17} /> Account</h2>
         {user ? (
           <>
             <p className="mt-1 text-sm text-neutral-500">
@@ -100,7 +107,7 @@ export default function SettingsPage() {
       </section>
 
       <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
-        <h2 className="text-lg font-bold text-neutral-950">🗂 Categories on your feed</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-950"><IconSliders size={17} /> Categories on your feed</h2>
         <p className="mt-1 text-sm text-neutral-500">
           Tap to show or hide a category on the Today page.
         </p>
@@ -134,7 +141,7 @@ export default function SettingsPage() {
       </section>
 
       <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
-        <h2 className="text-lg font-bold text-neutral-950">🔄 Fresh news</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-950"><IconRefresh size={17} /> Fresh news</h2>
         <p className="mt-1 text-sm leading-relaxed text-neutral-500">
           Your report refreshes automatically every morning around 5:00 (Bangkok time). You can also
           run it manually with your pipeline secret — note the free AI quota covers about one full
@@ -173,7 +180,7 @@ export default function SettingsPage() {
       </section>
 
       <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
-        <h2 className="text-lg font-bold text-neutral-950">👋 New here?</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-950"><IconSparkles size={17} /> New here?</h2>
         <p className="mt-1 text-sm text-neutral-500">
           Replay the quick intro tour whenever you like.
         </p>

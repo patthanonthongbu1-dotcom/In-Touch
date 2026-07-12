@@ -5,6 +5,7 @@ import { computeStreak } from "@/lib/streak";
 import { type Article } from "@/lib/types";
 import NewsExplorer from "@/components/NewsExplorer";
 import TrendingStrip from "@/components/TrendingStrip";
+import { IconBook, IconClock, IconFlame, IconNews } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -96,18 +97,18 @@ export default async function HomePage() {
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-neutral-700">
-          <span className="glass rounded-2xl px-5 py-3">
-            📰 {report.articles.length} stories curated
+          <span className="glass flex items-center gap-2 rounded-2xl px-5 py-3">
+            <IconNews size={16} /> {report.articles.length} stories curated
           </span>
-          <span className="glass rounded-2xl px-5 py-3">
-            📚 {totalVocab} vocabulary words
+          <span className="glass flex items-center gap-2 rounded-2xl px-5 py-3">
+            <IconBook size={16} /> {totalVocab} vocabulary words
           </span>
-          <span className="glass rounded-2xl px-5 py-3">
-            ⏱ ~{totalMinutes} min of reading
+          <span className="glass flex items-center gap-2 rounded-2xl px-5 py-3">
+            <IconClock size={16} /> ~{totalMinutes} min of reading
           </span>
           {streakInfo && (
             <span
-              className={`rounded-2xl px-5 py-3 ${
+              className={`flex items-center gap-2 rounded-2xl px-5 py-3 ${
                 streakInfo.readToday
                   ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/20"
                   : "glass"
@@ -118,7 +119,7 @@ export default async function HomePage() {
                   : "Read one story today to keep your streak"
               }
             >
-              🔥{" "}
+              <IconFlame size={16} />
               {streakInfo.streak === 0
                 ? "Read a story to start your streak"
                 : `${streakInfo.streak}-day streak${streakInfo.readToday ? " ✓" : " — read today to keep it"}`}
