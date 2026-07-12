@@ -26,7 +26,22 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // The app is account-first: signed-out visitors land on the login page.
+  // APIs keep their own auth (the news cron calls /api/pipeline cookie-less).
+  const path = request.nextUrl.pathname;
+  const isPublic = path.startsWith("/login") || path.startsWith("/auth") || path.startsWith("/api");
+  if (!user && !isPublic) {
+    const redirect = NextResponse.redirect(new URL("/login", request.url));
+    for (const cookie of response.cookies.getAll()) {
+      redirect.cookies.set(cookie);
+    }
+    return redirect;
+  }
+
   return response;
 }
 

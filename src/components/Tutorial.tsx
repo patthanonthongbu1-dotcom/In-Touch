@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
 import { saveSettings, useSettings } from "@/lib/settings";
 
 const INK = "#0a0a0a";
@@ -184,6 +185,7 @@ const emptySubscribe = () => () => {};
 
 export default function Tutorial() {
   const settings = useSettings();
+  const pathname = usePathname();
   const mounted = useSyncExternalStore(
     emptySubscribe,
     () => true,
@@ -191,7 +193,9 @@ export default function Tutorial() {
   );
   const [step, setStep] = useState(0);
 
-  if (!mounted || settings.tutorialDone) return null;
+  // The tour belongs to the app, not the sign-in flow — it plays after joining.
+  const onAuthPage = pathname.startsWith("/login") || pathname.startsWith("/auth");
+  if (!mounted || onAuthPage || settings.tutorialDone) return null;
 
   const finish = () => saveSettings({ ...settings, tutorialDone: true });
   const isLast = step === STEPS.length - 1;

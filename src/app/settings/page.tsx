@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { CATEGORIES, CATEGORY_META, type Category } from "@/lib/types";
 import { saveSettings, useSettings } from "@/lib/settings";
 import { useUser } from "@/lib/use-user";
@@ -17,7 +16,6 @@ import {
 
 export default function SettingsPage() {
   const settings = useSettings();
-  const router = useRouter();
   const { user, loading: userLoading } = useUser();
   const [signingOut, setSigningOut] = useState(false);
   const [pipelineState, setPipelineState] = useState<"idle" | "running" | "done" | "error">("idle");
@@ -26,8 +24,7 @@ export default function SettingsPage() {
   async function signOut() {
     setSigningOut(true);
     await supabaseBrowser().auth.signOut();
-    setSigningOut(false);
-    router.refresh();
+    window.location.assign("/login");
   }
 
   function toggleCategory(category: Category) {

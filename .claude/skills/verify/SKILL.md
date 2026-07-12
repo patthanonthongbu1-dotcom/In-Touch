@@ -21,6 +21,8 @@ No Playwright in the project; install it in the scratchpad (`npm i playwright`) 
 `chromium.launch({ channel: "msedge" })` — Edge is installed on this machine, Chrome is not.
 
 Gotchas:
+- The app is account-first: signed-out page requests redirect to /login (proxy.ts). To drive
+  other pages, create a confirmed test user via the admin API and sign in through the form first.
 - A first-visit tutorial overlay blocks everything. Dismiss it before screenshots by seeding
   localStorage **on the app's origin, then reloading**:
   `localStorage.setItem("intouch-settings", JSON.stringify({ tutorialDone: true, hiddenCategories: [], readArticles: [] }))`

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { supabaseBrowser, isAuthConfigured } from "@/lib/supabase-browser";
 
 type Mode = "signin" | "signup";
@@ -30,7 +30,6 @@ function GoogleLogo() {
 }
 
 export default function AuthPanel() {
-  const router = useRouter();
   const params = useSearchParams();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
@@ -78,8 +77,9 @@ export default function AuthPanel() {
         setBusy(false);
         return;
       }
-      router.push("/");
-      router.refresh();
+      // Full navigation: the router's prefetch cache may hold the pre-login
+      // redirect for "/", which would bounce straight back here.
+      window.location.assign("/");
       return;
     }
 
@@ -100,8 +100,7 @@ export default function AuthPanel() {
       return;
     }
     if (data.session) {
-      router.push("/");
-      router.refresh();
+      window.location.assign("/");
       return;
     }
     setMessage({
