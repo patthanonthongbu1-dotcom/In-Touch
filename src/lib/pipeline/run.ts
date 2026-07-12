@@ -24,9 +24,26 @@ export async function runPipeline(): Promise<PipelineResult> {
   const date = todayInBangkok();
 
   console.log("Fetching feeds...");
-  const items = await fetchAllFeeds();
-  console.log(`Fetched ${items.length} items after dedupe.`);
-  if (items.length === 0) throw new Error("No feed items fetched — check network/feeds.");
+  const fetched = await fetchAllFeeds();
+  console.log(`Fetched ${fetched.length} items after dedupe.`);
+  if (fetched.length === 0) throw new Error("No feed items fetched — check network/feeds.");
+
+  // Drop items already published in an earlier day's report: each day should
+  // surface new coverage, not carry yesterday's cards forward. (Items from
+  // today's own report stay eligible so same-day re-runs refresh them.)
+  const { data: existing, error: existingError } = await supabase()
+    .from("articles")
+    .select("source_url, published_date")
+    .in("source_url", fetched.map((item) => item.link));
+  if (existingError) throw new Error(`Supabase lookup failed: ${existingError.message}`);
+  const previouslyPublished = new Set(
+    (existing ?? []).filter((row) => row.published_date < date).map((row) => row.source_url)
+  );
+  const items = fetched.filter((item) => !previouslyPublished.has(item.link));
+  if (previouslyPublished.size > 0) {
+    console.log(`Skipping ${fetched.length - items.length} items already published on earlier days.`);
+  }
+  if (items.length === 0) throw new Error("Nothing new since the last report.");
 
   console.log("Curating with Claude...");
   const stories = await curateStories(items);
@@ -82,7 +99,7 @@ export async function runPipeline(): Promise<PipelineResult> {
 
   console.log(`Published ${rows.length} articles for ${date}.`);
   return {
-    fetched: items.length,
+    fetched: fetched.length,
     curated: stories.length,
     published: rows.length,
     skipped: stories.length - enriched.length,
