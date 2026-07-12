@@ -36,8 +36,17 @@ export default function AuthPanel() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const callbackError = params.get("error");
   const [message, setMessage] = useState<{ kind: "error" | "info"; text: string } | null>(
-    params.get("error") ? { kind: "error", text: "Sign-in didn't complete — please try again." } : null
+    callbackError
+      ? {
+          kind: "error",
+          text:
+            callbackError === "callback" || callbackError === "no code returned"
+              ? "Sign-in didn't complete — please try again."
+              : `Sign-in didn't complete: ${callbackError}`,
+        }
+      : null
   );
 
   const configured = isAuthConfigured();
