@@ -69,7 +69,7 @@ function ArticleCard({
       }`}
     >
       {article.image_url && (
-        <div className={`w-full overflow-hidden ${featured ? "h-52 sm:h-80" : "h-40 sm:h-44"}`}>
+        <div className={`w-full overflow-hidden ${featured ? "h-52 sm:h-80" : "h-28 sm:h-44"}`}>
           {/* Feed images come from arbitrary news CDNs, so next/image optimization is skipped. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -81,54 +81,64 @@ function ArticleCard({
         </div>
       )}
 
-      <div className={`flex flex-1 flex-col p-6 ${featured ? "sm:p-9" : ""}`}>
-        <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+      <div className={`flex flex-1 flex-col ${featured ? "p-6 sm:p-9" : "p-3.5 sm:p-6"}`}>
+        <div className="flex flex-wrap items-center gap-1.5 text-xs font-medium sm:gap-2">
           {featured && (
             <span className="flex items-center gap-1 rounded-full bg-neutral-950 px-2.5 py-1 text-white">
               <IconSparkles size={12} /> Top story
             </span>
           )}
-          <span className="rounded-full bg-white/80 px-2.5 py-1 text-neutral-700 ring-1 ring-neutral-200/70">
-            {meta.emoji} {meta.label}
+          <span className="rounded-full bg-white/80 px-2 py-0.5 text-neutral-700 ring-1 ring-neutral-200/70 sm:px-2.5 sm:py-1">
+            {meta.emoji}
+            <span className={featured ? "" : "hidden sm:inline"}> {meta.label}</span>
           </span>
-          <span className="rounded-full border border-neutral-950 bg-white/80 px-2.5 py-1 font-semibold text-neutral-950">
+          <span className="rounded-full border border-neutral-950 bg-white/80 px-2 py-0.5 font-semibold text-neutral-950 sm:px-2.5 sm:py-1">
             {article.difficulty}
           </span>
           {read && (
-            <span className="flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-white">
+            <span className="flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-white sm:px-2.5 sm:py-1">
               <IconCheck size={11} /> Read
             </span>
           )}
         </div>
 
         <h3
-          className={`mt-4 break-words font-semibold leading-snug tracking-tight text-neutral-950 ${
-            featured ? "text-2xl sm:text-3xl" : "text-lg"
+          className={`break-words font-semibold leading-snug tracking-tight text-neutral-950 ${
+            featured ? "mt-4 text-2xl sm:text-3xl" : "mt-2 text-sm sm:mt-4 sm:text-lg"
           }`}
         >
           {article.headline}
         </h3>
 
         <p
-          className={`mt-2 text-sm leading-relaxed text-neutral-600 ${
-            featured ? "line-clamp-3 sm:text-base" : "line-clamp-2"
+          className={`break-words leading-relaxed text-neutral-600 ${
+            featured
+              ? "mt-2 line-clamp-3 text-sm sm:text-base"
+              : "mt-1.5 line-clamp-2 text-xs sm:mt-2 sm:text-sm"
           }`}
         >
           {article.summary}
         </p>
 
-        <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-5 text-xs text-neutral-400">
+        <div
+          className={`mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-400 ${
+            featured ? "pt-5" : "pt-3 sm:pt-5"
+          }`}
+        >
           <span className="flex shrink-0 items-center gap-1">
             <IconClock size={12} /> {article.reading_time_min} min
           </span>
-          <span className="flex shrink-0 items-center gap-1">
+          <span className={`shrink-0 items-center gap-1 ${featured ? "flex" : "hidden sm:flex"}`}>
             <IconBook size={12} /> {article.vocabulary.length} words
           </span>
-          <span className="shrink-0" title="Added to InTouch (Bangkok time)">
+          <span
+            className={`shrink-0 ${featured ? "" : "hidden sm:inline"}`}
+            title="Added to InTouch (Bangkok time)"
+          >
             ↑ {formatTimeBangkok(article.created_at)}
           </span>
           <span className="min-w-0 max-w-full flex-1 truncate">{article.source}</span>
-          <span className="ml-auto flex shrink-0 items-center gap-1 font-semibold text-neutral-950 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 sm:-translate-x-2">
+          <span className="ml-auto hidden shrink-0 items-center gap-1 font-semibold text-neutral-950 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 sm:flex sm:-translate-x-2">
             Read more →
           </span>
         </div>
@@ -392,14 +402,14 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
 
       <div
         key={`${category}|${[...cefr].sort().join(",")}|${shortOnly}`}
-        className="mt-6 grid gap-5 sm:grid-cols-2"
+        className="mt-6 grid grid-cols-2 gap-3 sm:gap-5"
       >
         {visible.map((article, i) => {
           const featured = i === 0 && category === "all" && activeFilterCount === 0;
           return (
             <div
               key={article.id}
-              className={`animate-card-in ${featured ? "sm:col-span-2" : ""}`}
+              className={`animate-card-in ${featured ? "col-span-2" : ""}`}
               style={{ animationDelay: `${Math.min(i * 45, 400)}ms` }}
             >
               <ArticleCard
