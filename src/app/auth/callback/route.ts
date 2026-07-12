@@ -14,6 +14,9 @@ export async function GET(req: NextRequest) {
     if (!error) {
       return NextResponse.redirect(new URL(next.startsWith("/") ? next : "/", req.url));
     }
+    console.error(`Auth callback failed on ${req.nextUrl.host}: ${error.message}`);
+  } else {
+    console.error(`Auth callback hit without a code on ${req.nextUrl.host}`);
   }
   return NextResponse.redirect(new URL("/login?error=callback", req.url));
 }
