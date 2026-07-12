@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
-import { IconBook, IconGear, IconNews, IconRefresh, IconUser } from "@/components/icons";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { IconArchive, IconBook, IconGear, IconNews, IconUser } from "@/components/icons";
 import { useUser } from "@/lib/use-user";
 import logo from "@/app/In0Touch.png";
 
 const LINKS = [
   { href: "/", icon: IconNews, label: "Today" },
+  { href: "/archive", icon: IconArchive, label: "Archive" },
   { href: "/vocabulary", icon: IconBook, label: "Vocab" },
   { href: "/settings", icon: IconGear, label: "Settings" },
 ];
@@ -17,8 +18,6 @@ const LINKS = [
 export default function NavBar() {
   const [shrunk, setShrunk] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
-  const [refreshing, startRefresh] = useTransition();
   const { user } = useUser();
 
   useEffect(() => {
@@ -92,27 +91,16 @@ export default function NavBar() {
             );
           })}
 
-          <button
-            type="button"
-            aria-label="Refresh news"
-            onClick={() => startRefresh(() => router.refresh())}
-            className={`${itemBase} ${itemPad} text-neutral-600 hover:bg-white hover:text-neutral-950`}
-          >
-            <IconRefresh
-              size={iconSize}
-              className={`transition-all duration-200 ${refreshing ? "animate-spin" : ""}`}
-            />
-            <span className={`font-medium transition-all duration-200 ${labelSize}`}>
-              {refreshing ? "…" : "Refresh"}
-            </span>
-          </button>
-
           {user ? (
             <Link
-              href="/settings"
-              aria-label="Your account"
-              title={user.email ?? "Account"}
-              className={`${itemBase} ${itemPad} text-neutral-600 hover:bg-white hover:text-neutral-950`}
+              href="/profile"
+              aria-label="Your profile"
+              title={user.email ?? "Profile"}
+              className={`${itemBase} ${itemPad} ${
+                pathname === "/profile"
+                  ? "bg-neutral-950 text-white shadow-md shadow-neutral-950/20"
+                  : "text-neutral-600 hover:bg-white hover:text-neutral-950"
+              }`}
             >
               <span
                 className={`flex items-center justify-center rounded-full bg-neutral-950 font-bold text-white transition-all duration-200 ${

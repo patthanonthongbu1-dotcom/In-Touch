@@ -16,8 +16,15 @@ import {
 } from "@/components/icons";
 
 type Filter = "all" | Category;
+type Sort = "latest" | "top";
 
 const CEFR_LEVELS = ["B1", "B2", "C1", "C2"] as const;
+
+function publishedMs(article: Article): number {
+  const iso = article.source_published_at ?? article.created_at;
+  const ms = Date.parse(iso);
+  return Number.isNaN(ms) ? 0 : ms;
+}
 
 function Pill({
   active,
@@ -53,10 +60,12 @@ function Pill({
 function ArticleCard({
   article,
   featured = false,
+  featuredBadge = "Top story",
   read = false,
 }: {
   article: Article;
   featured?: boolean;
+  featuredBadge?: string;
   read?: boolean;
 }) {
   const meta = CATEGORY_META[article.category] ?? { emoji: "📰", label: article.category };
@@ -68,24 +77,36 @@ function ArticleCard({
         read ? "opacity-70 hover:opacity-100" : ""
       }`}
     >
-      {article.image_url && (
-        <div className={`w-full overflow-hidden ${featured ? "h-52 sm:h-80" : "h-28 sm:h-44"}`}>
-          {/* Feed images come from arbitrary news CDNs, so next/image optimization is skipped. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+      <div className={`w-full overflow-hidden ${featured ? "h-52 sm:h-80" : "h-28 sm:h-44"}`}>
+        {article.image_url ? (
+          /* Feed images come from arbitrary news CDNs, so next/image optimization is skipped. */
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={article.image_url}
             alt=""
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-        </div>
-      )}
+        ) : (
+          /* Placeholder for stories without a feed image — content TBD. */
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-neutral-100 via-white/60 to-neutral-200/80">
+            <span
+              aria-hidden
+              className={`select-none opacity-25 grayscale transition-transform duration-300 group-hover:scale-110 ${
+                featured ? "text-6xl sm:text-7xl" : "text-4xl sm:text-5xl"
+              }`}
+            >
+              {meta.emoji}
+            </span>
+          </div>
+        )}
+      </div>
 
       <div className={`flex flex-1 flex-col ${featured ? "p-6 sm:p-9" : "p-3.5 sm:p-6"}`}>
         <div className="flex flex-wrap items-center gap-1.5 text-xs font-medium sm:gap-2">
           {featured && (
             <span className="flex items-center gap-1 rounded-full bg-neutral-950 px-2.5 py-1 text-white">
-              <IconSparkles size={12} /> Top story
+              <IconSparkles size={12} /> {featuredBadge}
             </span>
           )}
           <span className="rounded-full bg-white/80 px-2 py-0.5 text-neutral-700 ring-1 ring-neutral-200/70 sm:px-2.5 sm:py-1">
@@ -150,6 +171,7 @@ function ArticleCard({
 export default function NewsExplorer({ articles }: { articles: Article[] }) {
   const { hiddenCategories, readArticles } = useSettings();
   const [activeCategory, setActiveCategory] = useState<Filter>("all");
+  const [sort, setSort] = useState<Sort>("latest");
   const [cefr, setCefr] = useState<Set<string>>(new Set());
   const [shortOnly, setShortOnly] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -231,7 +253,9 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
   const visible = feedArticles
     .filter((a) => category === "all" || a.category === category)
     .filter((a) => cefr.size === 0 || cefr.has(a.difficulty))
-    .filter((a) => !shortOnly || a.reading_time_min <= 2);
+    .filter((a) => !shortOnly || a.reading_time_min <= 2)
+    // Server order is importance ("top"); "latest" re-sorts newest first.
+    .sort((a, b) => (sort === "latest" ? publishedMs(b) - publishedMs(a) : 0));
 
   const activeFilterCount = cefr.size + (shortOnly ? 1 : 0);
   const readCount = feedArticles.filter((a) => readArticles.includes(a.id)).length;
@@ -337,6 +361,31 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
           {filtersOpen && (
             <div className="glass-strong absolute right-0 z-30 mt-2 w-64 rounded-3xl p-5 shadow-xl">
               <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                Sort by
+              </p>
+              <div className="mt-2.5 flex rounded-full bg-white/70 p-1 ring-1 ring-neutral-200/70">
+                {(
+                  [
+                    ["latest", "🕐 Latest"],
+                    ["top", "✨ Top stories"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setSort(value)}
+                    className={`flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                      sort === value
+                        ? "bg-neutral-950 text-white shadow"
+                        : "text-neutral-500 hover:text-neutral-950"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-neutral-400">
                 Reading level
               </p>
               <div className="mt-2.5 flex flex-wrap gap-2">
@@ -401,7 +450,7 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
       </div>
 
       <div
-        key={`${category}|${[...cefr].sort().join(",")}|${shortOnly}`}
+        key={`${category}|${sort}|${[...cefr].sort().join(",")}|${shortOnly}`}
         className="mt-6 grid grid-cols-2 gap-3 sm:gap-5"
       >
         {visible.map((article, i) => {
@@ -415,6 +464,7 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
               <ArticleCard
                 article={article}
                 featured={featured}
+                featuredBadge={sort === "latest" ? "Just in" : "Top story"}
                 read={readArticles.includes(article.id)}
               />
             </div>

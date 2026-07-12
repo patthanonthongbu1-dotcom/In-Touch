@@ -53,8 +53,12 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
   const [selected, setSelected] = useState<VocabEntry | null>(null);
   const [anchor, setAnchor] = useState<Anchor | null>(null);
   const [savedWords, setSavedWords] = useState<Set<string>>(new Set());
+  const [clickedWords, setClickedWords] = useState<Set<string>>(new Set());
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [mounted, setMounted] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!selected) return;
@@ -95,6 +99,7 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
     setSelected(entry);
 
     const key = entry.word.toLowerCase();
+    setClickedWords((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
     if (savedWords.has(key)) {
       setSaveState("saved");
       return;
@@ -151,6 +156,68 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
           word to open its toolbox — it&apos;s saved to your vocabulary bank automatically.
         </p>
       )}
+
+      {/* Floating word-exploration counter: fills clockwise as vocab words are tapped */}
+      {mounted &&
+        vocabulary.length > 0 &&
+        createPortal(
+          (() => {
+            const total = vocabulary.length;
+            const clicked = Math.min(clickedWords.size, total);
+            const done = clicked === total;
+            const radius = 26;
+            const circumference = 2 * Math.PI * radius;
+            return (
+              <div
+                title={
+                  done
+                    ? "All words explored — great reading!"
+                    : `${clicked} of ${total} highlighted words explored`
+                }
+                className="fixed bottom-5 right-5 z-30 select-none"
+              >
+                <div
+                  className={`relative h-16 w-16 rounded-full shadow-lg transition-transform duration-300 ${
+                    done ? "scale-110" : ""
+                  }`}
+                >
+                  <svg width="64" height="64" viewBox="0 0 64 64" className="block">
+                    <circle cx="32" cy="32" r={radius} fill="rgb(255 255 255 / 0.92)" />
+                    <circle
+                      cx="32"
+                      cy="32"
+                      r={radius}
+                      fill="none"
+                      stroke="rgb(10 10 10 / 0.12)"
+                      strokeWidth="4"
+                    />
+                    <circle
+                      cx="32"
+                      cy="32"
+                      r={radius}
+                      fill="none"
+                      stroke={done ? "#059669" : "#0a0a0a"}
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={circumference * (1 - clicked / total)}
+                      transform="rotate(-90 32 32)"
+                      className="transition-all duration-500 ease-out"
+                    />
+                  </svg>
+                  <span
+                    className={`absolute inset-0 flex items-center justify-center text-sm font-bold ${
+                      done ? "text-emerald-600" : "text-neutral-950"
+                    }`}
+                  >
+                    {done ? "🎉" : `${clicked}/${total}`}
+                  </span>
+                </div>
+              </div>
+            );
+          })(),
+          document.body
+        )}
 
       {selected &&
         anchor &&
