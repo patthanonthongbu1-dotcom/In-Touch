@@ -183,7 +183,7 @@ export default function VocabularyPage() {
           </button>
 
           {filtersOpen && (
-            <div className="glass-strong absolute right-0 z-30 mt-2 w-64 rounded-3xl p-5 shadow-xl">
+            <div className="animate-pop-in glass-strong absolute right-0 z-30 mt-2 w-64 rounded-3xl p-5 shadow-xl">
               <button
                 type="button"
                 onClick={() => setFavoritesOnly((v) => !v)}
@@ -318,7 +318,7 @@ export default function VocabularyPage() {
                 >
                   <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     <span
-                      className={`font-extrabold tracking-tight text-neutral-950 ${
+                      className={`font-extrabold tracking-tight text-neutral-950 transition-all duration-300 ${
                         open ? "text-3xl" : "text-xl"
                       }`}
                     >
@@ -363,24 +363,26 @@ export default function VocabularyPage() {
                 </div>
               </div>
 
-              {open && (
-                <div className="mt-4 border-t border-neutral-200/70 pt-4">
-                  <VocabCardBody entry={item.card} expanded />
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200/70 pt-3">
-                    <span className="text-xs text-neutral-400">
-                      learned {new Date(item.learned_at).toLocaleDateString()}
-                      {item.article_headline && <> · from &ldquo;{item.article_headline}&rdquo;</>}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => remove(item)}
-                      className="flex items-center gap-1.5 rounded-full border border-red-200 bg-white/60 px-4 py-1.5 text-xs font-semibold text-red-500 transition-all duration-150 hover:-translate-y-0.5 hover:bg-red-50"
-                    >
-                      <IconTrash size={12} /> Delete
-                    </button>
+              <div className={`collapse-grid ${open ? "open" : ""}`}>
+                <div>
+                  <div className="mt-4 border-t border-neutral-200/70 pt-4">
+                    <VocabCardBody entry={item.card} expanded />
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200/70 pt-3">
+                      <span className="text-xs text-neutral-400">
+                        learned {new Date(item.learned_at).toLocaleDateString()}
+                        {item.article_headline && <> · from &ldquo;{item.article_headline}&rdquo;</>}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => remove(item)}
+                        className="flex items-center gap-1.5 rounded-full border border-red-200 bg-white/60 px-4 py-1.5 text-xs font-semibold text-red-500 transition-all duration-150 hover:-translate-y-0.5 hover:bg-red-50"
+                      >
+                        <IconTrash size={12} /> Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
             </li>
           );
         })}

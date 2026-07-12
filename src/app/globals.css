@@ -264,6 +264,28 @@ body::before {
   }
 }
 
+/* Smooth expand/collapse: grid rows animate 0fr ↔ 1fr, so content of any
+   height slides open instead of snapping. Wrap collapsible content in
+   .collapse-grid > div and toggle .open. */
+.collapse-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.collapse-grid.open {
+  grid-template-rows: 1fr;
+}
+.collapse-grid > * {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+.collapse-grid.open > * {
+  opacity: 1;
+  transition-delay: 0.08s;
+}
+
 /* Staggered entrance for cards when a tab or filter changes */
 @keyframes card-in {
   from {

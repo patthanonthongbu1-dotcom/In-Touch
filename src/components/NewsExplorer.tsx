@@ -294,7 +294,8 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
       <div className="flex items-start gap-2">
         <div
           ref={barRef}
-          className={`relative flex flex-1 gap-2 ${
+          key={expanded ? "wrapped" : "single-row"}
+          className={`animate-fade-in relative flex flex-1 gap-2 ${
             expanded
               ? "flex-wrap"
               : "pill-scroll -mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
@@ -365,7 +366,7 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
           </button>
 
           {filtersOpen && (
-            <div className="glass-strong absolute right-0 z-30 mt-2 w-64 rounded-3xl p-5 shadow-xl">
+            <div className="animate-pop-in glass-strong absolute right-0 z-30 mt-2 w-64 rounded-3xl p-5 shadow-xl">
               <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
                 Sort by
               </p>

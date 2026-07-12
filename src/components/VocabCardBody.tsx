@@ -36,52 +36,57 @@ export default function VocabCardBody({
   expanded: boolean;
 }) {
   return (
-    <div className="space-y-3.5">
-      <div>
-        <Subheading>Meaning</Subheading>
-        <p className="mt-1.5 rounded-xl bg-neutral-950 px-3.5 py-2.5 text-[15px] font-medium leading-relaxed text-white">
-          {entry.meaning}
-        </p>
+    <div>
+      <div className="space-y-3.5">
+        <div>
+          <Subheading>Meaning</Subheading>
+          <p className="mt-1.5 rounded-xl bg-neutral-950 px-3.5 py-2.5 text-[15px] font-medium leading-relaxed text-white">
+            {entry.meaning}
+          </p>
+        </div>
+
+        {entry.thai && (
+          <div>
+            <Subheading>Thai</Subheading>
+            <p className="mt-1 text-sm font-medium leading-relaxed text-neutral-700">{entry.thai}</p>
+          </div>
+        )}
       </div>
 
-      {entry.thai && (
+      {/* Always rendered so the reveal can animate open/closed */}
+      <div className={`collapse-grid ${expanded ? "open" : ""}`}>
         <div>
-          <Subheading>Thai</Subheading>
-          <p className="mt-1 text-sm font-medium leading-relaxed text-neutral-700">{entry.thai}</p>
-        </div>
-      )}
+          <div className="space-y-3.5 pt-3.5">
+            <div>
+              <Subheading>Example</Subheading>
+              <p className="mt-1 border-l-2 border-emerald-400 pl-3 text-sm italic leading-relaxed text-neutral-600">
+                &ldquo;{entry.example}&rdquo;
+              </p>
+            </div>
 
-      {expanded && (
-        <>
-          <div>
-            <Subheading>Example</Subheading>
-            <p className="mt-1 border-l-2 border-emerald-400 pl-3 text-sm italic leading-relaxed text-neutral-600">
-              &ldquo;{entry.example}&rdquo;
-            </p>
+            {entry.synonyms.length > 0 && (
+              <div>
+                <Subheading>Synonyms</Subheading>
+                <Chips items={entry.synonyms} />
+              </div>
+            )}
+
+            {entry.collocations.length > 0 && (
+              <div>
+                <Subheading>Often used with</Subheading>
+                <Chips items={entry.collocations} />
+              </div>
+            )}
+
+            {entry.whyUseful && (
+              <div>
+                <Subheading>Why learn it</Subheading>
+                <p className="mt-1 text-sm leading-relaxed text-neutral-600">{entry.whyUseful}</p>
+              </div>
+            )}
           </div>
-
-          {entry.synonyms.length > 0 && (
-            <div>
-              <Subheading>Synonyms</Subheading>
-              <Chips items={entry.synonyms} />
-            </div>
-          )}
-
-          {entry.collocations.length > 0 && (
-            <div>
-              <Subheading>Often used with</Subheading>
-              <Chips items={entry.collocations} />
-            </div>
-          )}
-
-          {entry.whyUseful && (
-            <div>
-              <Subheading>Why learn it</Subheading>
-              <p className="mt-1 text-sm leading-relaxed text-neutral-600">{entry.whyUseful}</p>
-            </div>
-          )}
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
