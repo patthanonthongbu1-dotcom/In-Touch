@@ -1,13 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CATEGORIES, CATEGORY_META, type Category } from "@/lib/types";
 import { saveSettings, useSettings } from "@/lib/settings";
+import { useUser } from "@/lib/use-user";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 export default function SettingsPage() {
   const settings = useSettings();
+  const router = useRouter();
+  const { user, loading: userLoading } = useUser();
+  const [signingOut, setSigningOut] = useState(false);
   const [pipelineState, setPipelineState] = useState<"idle" | "running" | "done" | "error">("idle");
   const [pipelineMessage, setPipelineMessage] = useState("");
+
+  async function signOut() {
+    setSigningOut(true);
+    await supabaseBrowser().auth.signOut();
+    setSigningOut(false);
+    router.refresh();
+  }
 
   function toggleCategory(category: Category) {
     const hidden = settings.hiddenCategories.includes(category)
@@ -44,10 +58,48 @@ export default function SettingsPage() {
         ⚙️ Settings
       </h1>
       <p className="mt-2 text-sm text-neutral-500 sm:text-base">
-        Shape your daily report. Everything here is saved on this device.
+        {user
+          ? "Shape your daily report. Your preferences sync to your account."
+          : "Shape your daily report. Everything here is saved on this device."}
       </p>
 
       <section className="glass mt-8 rounded-3xl p-6 sm:p-8">
+        <h2 className="text-lg font-bold text-neutral-950">👤 Account</h2>
+        {user ? (
+          <>
+            <p className="mt-1 text-sm text-neutral-500">
+              Signed in as <span className="font-semibold text-neutral-950">{user.email}</span>.
+              Your vocabulary, settings, and reading streak are saved to this account.
+            </p>
+            <button
+              type="button"
+              onClick={signOut}
+              disabled={signingOut}
+              className="mt-4 rounded-full border border-neutral-300 bg-white/70 px-5 py-2.5 text-sm font-semibold text-neutral-700 transition-all duration-150 hover:border-neutral-950 hover:text-neutral-950 disabled:opacity-50"
+            >
+              {signingOut ? "Signing out…" : "Sign out"}
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="mt-1 text-sm text-neutral-500">
+              {userLoading
+                ? "Checking your session…"
+                : "You're not signed in — an account keeps your vocabulary, settings, and reading streak on every device."}
+            </p>
+            {!userLoading && (
+              <Link
+                href="/login"
+                className="mt-4 inline-block rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-950/20 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-800"
+              >
+                Sign in or create an account
+              </Link>
+            )}
+          </>
+        )}
+      </section>
+
+      <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
         <h2 className="text-lg font-bold text-neutral-950">🗂 Categories on your feed</h2>
         <p className="mt-1 text-sm text-neutral-500">
           Tap to show or hide a category on the Today page.

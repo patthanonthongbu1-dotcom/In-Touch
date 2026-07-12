@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { IconBook, IconGear, IconNews, IconRefresh } from "@/components/icons";
+import { IconBook, IconGear, IconNews, IconRefresh, IconUser } from "@/components/icons";
+import { useUser } from "@/lib/use-user";
 import logo from "@/app/In0Touch.png";
 
 const LINKS = [
@@ -18,6 +19,7 @@ export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const [refreshing, startRefresh] = useTransition();
+  const { user } = useUser();
 
   useEffect(() => {
     let raf = 0;
@@ -104,6 +106,38 @@ export default function NavBar() {
               {refreshing ? "…" : "Refresh"}
             </span>
           </button>
+
+          {user ? (
+            <Link
+              href="/settings"
+              aria-label="Your account"
+              title={user.email ?? "Account"}
+              className={`${itemBase} ${itemPad} text-neutral-600 hover:bg-white hover:text-neutral-950`}
+            >
+              <span
+                className={`flex items-center justify-center rounded-full bg-neutral-950 font-bold text-white transition-all duration-200 ${
+                  shrunk ? "h-[15px] w-[15px] text-[8px]" : "h-[18px] w-[18px] text-[10px]"
+                }`}
+              >
+                {(user.email ?? "?").charAt(0).toUpperCase()}
+              </span>
+              <span className={`font-medium transition-all duration-200 ${labelSize}`}>Me</span>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className={`${itemBase} ${itemPad} ${
+                pathname === "/login"
+                  ? "bg-neutral-950 text-white shadow-md shadow-neutral-950/20"
+                  : "text-neutral-600 hover:bg-white hover:text-neutral-950"
+              }`}
+            >
+              <IconUser size={iconSize} className="transition-all duration-200" />
+              <span className={`whitespace-nowrap font-medium transition-all duration-200 ${labelSize}`}>
+                Sign in
+              </span>
+            </Link>
+          )}
         </div>
       </nav>
     </header>

@@ -48,3 +48,26 @@ create index if not exists vocab_bank_user_idx on vocab_bank (user_id, learned_a
 -- server, so RLS stays enabled with no public policies: anon access is denied.
 alter table articles enable row level security;
 alter table vocab_bank enable row level security;
+
+-- ---- Accounts (Supabase Auth) ----
+-- user_id columns hold auth.uid()::text for signed-in users; the legacy
+-- pre-auth rows use 'default' and are claimed by the first account to log in.
+
+create table if not exists user_settings (
+  user_id text primary key,
+  settings jsonb not null default '{}',          -- AppSettings snapshot
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists article_reads (
+  user_id text not null,
+  article_id uuid not null references articles(id) on delete cascade,
+  read_date date not null,                       -- Bangkok calendar day; drives the streak
+  read_at timestamptz not null default now(),
+  primary key (user_id, article_id)
+);
+
+create index if not exists article_reads_user_date_idx on article_reads (user_id, read_date desc);
+
+alter table user_settings enable row level security;
+alter table article_reads enable row level security;

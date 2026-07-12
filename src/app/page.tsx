@@ -1,10 +1,21 @@
 import { Suspense } from "react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { getUser } from "@/lib/auth";
+import { computeStreak } from "@/lib/streak";
 import { type Article } from "@/lib/types";
 import NewsExplorer from "@/components/NewsExplorer";
 import TrendingStrip from "@/components/TrendingStrip";
 
 export const dynamic = "force-dynamic";
+
+async function getStreak(userId: string): Promise<{ streak: number; readToday: boolean }> {
+  const { data, error } = await supabase()
+    .from("article_reads")
+    .select("read_date")
+    .eq("user_id", userId);
+  if (error) return { streak: 0, readToday: false }; // table missing pre-migration
+  return computeStreak((data ?? []).map((r) => r.read_date));
+}
 
 async function getLatestReport(): Promise<{ date: string; articles: Article[] } | null> {
   const db = supabase();
@@ -53,6 +64,9 @@ export default async function HomePage() {
     return <SetupNotice message="The database is empty — run the pipeline to publish your first daily report." />;
   }
 
+  const user = await getUser();
+  const streakInfo = user ? await getStreak(user.id) : null;
+
   const displayDate = new Date(`${report.date}T00:00:00`).toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
@@ -91,6 +105,25 @@ export default async function HomePage() {
           <span className="glass rounded-2xl px-5 py-3">
             ⏱ ~{totalMinutes} min of reading
           </span>
+          {streakInfo && (
+            <span
+              className={`rounded-2xl px-5 py-3 ${
+                streakInfo.readToday
+                  ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/20"
+                  : "glass"
+              }`}
+              title={
+                streakInfo.readToday
+                  ? "You've read today — streak safe!"
+                  : "Read one story today to keep your streak"
+              }
+            >
+              🔥{" "}
+              {streakInfo.streak === 0
+                ? "Read a story to start your streak"
+                : `${streakInfo.streak}-day streak${streakInfo.readToday ? " ✓" : " — read today to keep it"}`}
+            </span>
+          )}
         </div>
       </section>
 

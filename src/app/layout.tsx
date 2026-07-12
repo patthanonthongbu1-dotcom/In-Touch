@@ -3,6 +3,7 @@ import { ViewTransition } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import NavBar from "@/components/NavBar";
 import Tutorial from "@/components/Tutorial";
+import AccountSync from "@/components/AccountSync";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -34,6 +35,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         <NavBar />
         <Tutorial />
+        <AccountSync />
         <main className="w-full flex-1">
           <ViewTransition
             enter={{ "nav-forward": "nav-forward", "nav-back": "nav-back", default: "page-enter" }}
