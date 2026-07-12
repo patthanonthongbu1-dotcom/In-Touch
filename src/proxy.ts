@@ -30,12 +30,15 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // The app is account-first: signed-out visitors land on the login page.
-  // APIs keep their own auth (the news cron calls /api/pipeline cookie-less).
+  // Anyone can browse and read the news; the pages that only mean something
+  // with an account send signed-out visitors to sign in first. `next` brings
+  // them back where they were headed.
   const path = request.nextUrl.pathname;
-  const isPublic = path.startsWith("/login") || path.startsWith("/auth") || path.startsWith("/api");
-  if (!user && !isPublic) {
-    const redirect = NextResponse.redirect(new URL("/login", request.url));
+  const accountOnly = ["/profile", "/vocabulary", "/practice"];
+  if (!user && accountOnly.some((p) => path === p || path.startsWith(`${p}/`))) {
+    const login = new URL("/login", request.url);
+    login.searchParams.set("next", path);
+    const redirect = NextResponse.redirect(login);
     for (const cookie of response.cookies.getAll()) {
       redirect.cookies.set(cookie);
     }

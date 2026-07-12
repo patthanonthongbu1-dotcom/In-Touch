@@ -29,8 +29,14 @@ function GoogleLogo() {
   );
 }
 
+function safeNext(value: string | null): string {
+  // Only same-site paths — never an absolute URL an attacker could inject.
+  return value && value.startsWith("/") && !value.startsWith("//") ? value : "/";
+}
+
 export default function AuthPanel() {
   const params = useSearchParams();
+  const next = safeNext(params.get("next"));
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -55,7 +61,9 @@ export default function AuthPanel() {
     setBusy(true);
     const { error } = await supabaseBrowser().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
     });
     if (error) {
       setMessage({ kind: "error", text: error.message });
@@ -79,14 +87,16 @@ export default function AuthPanel() {
       }
       // Full navigation: the router's prefetch cache may hold the pre-login
       // redirect for "/", which would bounce straight back here.
-      window.location.assign("/");
+      window.location.assign(next);
       return;
     }
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
     });
     if (error) {
       setMessage({ kind: "error", text: error.message });
@@ -100,7 +110,7 @@ export default function AuthPanel() {
       return;
     }
     if (data.session) {
-      window.location.assign("/");
+      window.location.assign(next);
       return;
     }
     setMessage({

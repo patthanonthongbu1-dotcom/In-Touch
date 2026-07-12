@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { usePathname } from "next/navigation";
 import type { VocabEntry } from "@/lib/types";
+import { useUser } from "@/lib/use-user";
 import { IconChevronDown, IconX } from "@/components/icons";
 import VocabCardBody from "@/components/VocabCardBody";
 
@@ -51,6 +53,8 @@ interface Anchor {
 
 export default function Reader({ articleId, headline, summary, vocabulary }: ReaderProps) {
   const segments = useMemo(() => segmentSummary(summary, vocabulary), [summary, vocabulary]);
+  const { user } = useUser();
+  const pathname = usePathname();
   const [selected, setSelected] = useState<VocabEntry | null>(null);
   const [anchor, setAnchor] = useState<Anchor | null>(null);
   const [savedWords, setSavedWords] = useState<Set<string>>(new Set());
@@ -103,6 +107,14 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
 
     const key = entry.word.toLowerCase();
     setClickedWords((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+
+    // Signed out: the toolbox still opens (reading is free), but saving the
+    // word to a bank is an account feature.
+    if (!user) {
+      setSaveState("idle");
+      return;
+    }
+
     if (savedWords.has(key)) {
       setSaveState("saved");
       return;
@@ -156,7 +168,8 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
           <span className="underline decoration-emerald-400 decoration-2 underline-offset-2">
             highlighted
           </span>{" "}
-          word to open its toolbox — it&apos;s saved to your vocabulary bank automatically.
+          word to open its toolbox
+          {user ? " — it's saved to your vocabulary bank automatically." : ". Sign in to keep the words you tap."}
         </p>
       )}
 
@@ -275,10 +288,19 @@ export default function Reader({ articleId, headline, summary, vocabulary }: Rea
             <VocabCardBody entry={selected} expanded={expanded} />
           </div>
 
+          {!user && (
+            <a
+              href={`/login?next=${encodeURIComponent(pathname)}`}
+              className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-full bg-neutral-950 py-2.5 text-xs font-semibold text-white transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-800"
+            >
+              Sign in to save this word →
+            </a>
+          )}
+
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-full border border-neutral-200/80 bg-white/70 py-2 text-xs font-semibold text-neutral-500 transition-all duration-150 hover:border-neutral-950 hover:text-neutral-950"
+            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full border border-neutral-200/80 bg-white/70 py-2 text-xs font-semibold text-neutral-500 transition-all duration-150 hover:border-neutral-950 hover:text-neutral-950"
           >
             {expanded ? "Show less" : "Example, synonyms & more"}
             <IconChevronDown

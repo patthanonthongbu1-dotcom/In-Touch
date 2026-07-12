@@ -16,9 +16,16 @@ const PERKS = [
   { icon: IconGear, title: "Synced settings", text: "Your feed preferences, everywhere you sign in." },
 ];
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   const user = await getUser();
-  if (user) redirect("/");
+  if (user) {
+    const { next } = await searchParams;
+    redirect(next?.startsWith("/") && !next.startsWith("//") ? next : "/");
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:py-16">

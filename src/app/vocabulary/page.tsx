@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import type { VocabBankItem } from "@/lib/types";
 import {
   IconBook,
@@ -14,10 +15,6 @@ import {
   IconX,
 } from "@/components/icons";
 import VocabCardBody from "@/components/VocabCardBody";
-import PracticeSession, {
-  PRACTICE_MODES,
-  type PracticeMode,
-} from "@/components/PracticeSession";
 
 const CEFR_LEVELS = ["A2", "B1", "B2", "C1", "C2"] as const;
 
@@ -38,10 +35,7 @@ export default function VocabularyPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [weekCutoff, setWeekCutoff] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [practiceOpen, setPracticeOpen] = useState(false);
-  const [practiceMode, setPracticeMode] = useState<PracticeMode | null>(null);
   const filtersRef = useRef<HTMLDivElement>(null);
-  const practiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,37 +71,6 @@ export default function VocabularyPage() {
     return () => window.removeEventListener("pointerdown", onPointerDown);
   }, [filtersOpen]);
 
-  useEffect(() => {
-    if (!practiceOpen) return;
-    function onPointerDown(e: PointerEvent) {
-      if (practiceRef.current && !practiceRef.current.contains(e.target as Node)) {
-        setPracticeOpen(false);
-      }
-    }
-    window.addEventListener("pointerdown", onPointerDown);
-    return () => window.removeEventListener("pointerdown", onPointerDown);
-  }, [practiceOpen]);
-
-  // Practice results feed the mastery/review counters the profile shows.
-  async function recordReview(id: string, correct: boolean) {
-    setItems(
-      (prev) =>
-        prev?.map((i) =>
-          i.id === id
-            ? {
-                ...i,
-                review_count: i.review_count + 1,
-                mastery: correct ? Math.min(5, i.mastery + 1) : Math.max(0, i.mastery - 1),
-              }
-            : i
-        ) ?? null
-    );
-    await fetch("/api/vocab", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, reviewed: true, correct }),
-    });
-  }
 
   async function toggleFavorite(item: VocabBankItem) {
     setItems((prev) =>
@@ -175,52 +138,22 @@ export default function VocabularyPage() {
           </p>
         </div>
 
-        {/* Practice — pick a mode, then drill the weakest words */}
-        <div className="relative shrink-0" ref={practiceRef}>
-          <button
-            type="button"
-            onClick={() => setPracticeOpen((v) => !v)}
-            disabled={(items?.length ?? 0) === 0}
-            aria-expanded={practiceOpen}
-            className="flex items-center gap-2 rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-950/20 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <IconSparkles size={15} />
-            Practice
-            {(items?.length ?? 0) > 0 && (
-              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-bold">
-                {Math.min(items!.length, 10)}
-              </span>
-            )}
-          </button>
-
-          {practiceOpen && (
-            <div className="animate-pop-in glass-strong absolute right-0 z-30 mt-2 w-72 rounded-3xl p-5 shadow-xl">
-              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                Practice mode
-              </p>
-              <div className="mt-2.5 space-y-2">
-                {PRACTICE_MODES.map((m) => (
-                  <button
-                    key={m.key}
-                    type="button"
-                    onClick={() => {
-                      setPracticeMode(m.key);
-                      setPracticeOpen(false);
-                    }}
-                    className="w-full rounded-2xl bg-white/70 px-4 py-3 text-left ring-1 ring-neutral-200/70 transition-all hover:-translate-y-0.5 hover:bg-white hover:ring-neutral-950/40"
-                  >
-                    <p className="text-sm font-semibold text-neutral-950">{m.label}</p>
-                    <p className="mt-0.5 text-xs text-neutral-500">{m.hint}</p>
-                  </button>
-                ))}
-              </div>
-              <p className="mt-4 border-t border-neutral-200/70 pt-3 text-xs leading-relaxed text-neutral-400">
-                Each round drills up to 10 words, weakest first. Your answers update each
-                word&apos;s mastery.
-              </p>
-            </div>
+        {/* Practice lives on its own page */}
+        <Link
+          href="/practice"
+          className={`flex shrink-0 items-center gap-2 rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-950/20 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-800 ${
+            (items?.length ?? 0) === 0 ? "pointer-events-none opacity-40" : ""
+          }`}
+          aria-disabled={(items?.length ?? 0) === 0}
+        >
+          <IconSparkles size={15} />
+          Practice
+          {(items?.length ?? 0) > 0 && (
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-bold">
+              {Math.min(items!.length, 10)}
+            </span>
           )}
-        </div>
+        </Link>
       </div>
 
       {/* Stats */}
@@ -497,14 +430,6 @@ export default function VocabularyPage() {
         })}
       </ul>
 
-      {practiceMode && items && items.length > 0 && (
-        <PracticeSession
-          items={items}
-          mode={practiceMode}
-          onClose={() => setPracticeMode(null)}
-          onReviewed={recordReview}
-        />
-      )}
     </div>
   );
 }
