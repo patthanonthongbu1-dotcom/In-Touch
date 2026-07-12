@@ -19,10 +19,10 @@ export const metadata = { title: "Profile — InTouch" };
 
 const DAY_MS = 86_400_000;
 
-function lastSevenDays(today: string): string[] {
+function lastDays(today: string, count: number): string[] {
   const end = Date.parse(`${today}T00:00:00Z`);
-  return Array.from({ length: 7 }, (_, i) =>
-    new Date(end - (6 - i) * DAY_MS).toISOString().slice(0, 10)
+  return Array.from({ length: count }, (_, i) =>
+    new Date(end - (count - 1 - i) * DAY_MS).toISOString().slice(0, 10)
   );
 }
 
@@ -40,11 +40,11 @@ export default async function ProfilePage() {
   const today = todayBangkok();
   const { streak, readToday } = computeStreak(readDates, today);
   const readDaySet = new Set(readDates);
-  const week = lastSevenDays(today);
+  const week = lastDays(today, 7);
+  const month = lastDays(today, 35); // five full weeks for the streak calendar
 
   const vocab = vocabRes.data ?? [];
   const stats = [
-    { icon: IconFlame, value: streak, label: "day streak" },
     { icon: IconNews, value: readDates.length, label: "stories read" },
     { icon: IconBook, value: vocab.length, label: "words saved" },
     { icon: IconStar, value: vocab.filter((v) => v.favorite).length, label: "favorites" },
@@ -77,10 +77,10 @@ export default async function ProfilePage() {
               src={avatarUrl}
               alt=""
               referrerPolicy="no-referrer"
-              className="h-20 w-20 rounded-3xl object-cover shadow-lg"
+              className="h-20 w-20 rounded-full object-cover shadow-lg ring-2 ring-white"
             />
           ) : (
-            <span className="glass flex h-20 w-20 items-center justify-center rounded-3xl text-4xl shadow-lg">
+            <span className="glass flex h-20 w-20 items-center justify-center rounded-full text-4xl shadow-lg">
               {avatarEmoji}
             </span>
           )}
@@ -93,47 +93,89 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {/* Last 7 days of reading */}
-        <div className="mt-6">
-          <div className="flex items-baseline justify-between text-xs font-medium">
-            <span className="uppercase tracking-wider text-neutral-400">This week</span>
-            <span className="text-neutral-500">
-              {readToday ? "Today's read is in — streak safe ✓" : "Read one story to keep your streak"}
-            </span>
+      </section>
+
+      {/* Streak — this page is its home */}
+      <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
+        <div className="flex flex-wrap items-center gap-5">
+          <span
+            className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full ${
+              readToday
+                ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/25"
+                : "bg-white/70 text-neutral-400 ring-1 ring-neutral-200/70"
+            }`}
+          >
+            <IconFlame size={28} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-3xl font-extrabold tracking-tight text-neutral-950 sm:text-4xl">
+              {streak} <span className="text-lg font-bold text-neutral-500">day streak</span>
+            </p>
+            <p className="mt-0.5 text-sm text-neutral-500">
+              {readToday
+                ? "Today's read is in — streak safe."
+                : streak > 0
+                  ? "Read one story today to keep it going."
+                  : "Read one story today to light the flame."}
+            </p>
           </div>
-          <div className="mt-2.5 flex gap-2">
-            {week.map((day) => {
-              const done = readDaySet.has(day);
-              const isToday = day === today;
-              const letter = new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", {
-                weekday: "narrow",
-                timeZone: "UTC",
-              });
-              return (
-                <div key={day} className="flex flex-1 flex-col items-center gap-1.5">
-                  <span
-                    className={`flex h-9 w-full items-center justify-center rounded-xl text-xs font-bold transition-all ${
-                      done
-                        ? "bg-neutral-950 text-white shadow-md shadow-neutral-950/20"
-                        : `bg-white/60 text-neutral-300 ring-1 ring-neutral-200/70 ${
-                            isToday ? "ring-2 ring-neutral-950/40" : ""
-                          }`
-                    }`}
-                  >
-                    {done && <IconCheck size={13} />}
-                  </span>
-                  <span className={`text-[10px] font-medium ${isToday ? "text-neutral-950" : "text-neutral-400"}`}>
-                    {letter}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+        </div>
+
+        {/* This week */}
+        <div className="mt-6 flex gap-2">
+          {week.map((day) => {
+            const done = readDaySet.has(day);
+            const isToday = day === today;
+            const letter = new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", {
+              weekday: "narrow",
+              timeZone: "UTC",
+            });
+            return (
+              <div key={day} className="flex flex-1 flex-col items-center gap-1.5">
+                <span
+                  className={`flex h-9 w-full items-center justify-center rounded-xl text-xs font-bold transition-all ${
+                    done
+                      ? "bg-neutral-950 text-white shadow-md shadow-neutral-950/20"
+                      : `bg-white/60 text-neutral-300 ring-1 ring-neutral-200/70 ${
+                          isToday ? "ring-2 ring-neutral-950/40" : ""
+                        }`
+                  }`}
+                >
+                  {done && <IconCheck size={13} />}
+                </span>
+                <span className={`text-[10px] font-medium ${isToday ? "text-neutral-950" : "text-neutral-400"}`}>
+                  {letter}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Last five weeks */}
+        <p className="mt-6 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+          Last 5 weeks
+        </p>
+        <div className="mt-2 grid grid-cols-7 gap-1.5">
+          {month.map((day) => {
+            const done = readDaySet.has(day);
+            const isToday = day === today;
+            return (
+              <span
+                key={day}
+                title={`${day}${done ? " — read ✓" : ""}`}
+                className={`h-5 rounded-md transition-all ${
+                  done
+                    ? "bg-neutral-950"
+                    : `bg-neutral-950/[0.06] ${isToday ? "ring-1 ring-neutral-950/40" : ""}`
+                }`}
+              />
+            );
+          })}
         </div>
       </section>
 
       {/* Stats */}
-      <section className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
+      <section className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         {stats.map((stat) => (
           <div key={stat.label} className="glass rounded-3xl p-4 text-center sm:p-5">
             <stat.icon aria-hidden size={20} className="mx-auto text-neutral-400" />

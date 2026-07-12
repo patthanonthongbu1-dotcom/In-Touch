@@ -70,7 +70,7 @@ export default function ProfileEditor({
                   setState("idle");
                 }}
                 aria-pressed={emoji === option}
-                className={`flex h-11 w-11 items-center justify-center rounded-2xl text-xl transition-all ${
+                className={`flex h-11 w-11 items-center justify-center rounded-full text-xl transition-all ${
                   emoji === option
                     ? "bg-neutral-950 shadow-lg shadow-neutral-950/20"
                     : "glass hover:bg-white"
