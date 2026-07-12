@@ -55,6 +55,5 @@ export async function curateStories(items: RawItem[]): Promise<CuratedStory[]> {
     }))
     .filter((story) => story.items.length > 0)
     .sort((a, b) => b.importance - a.importance)
-    // Gemini's free tier allows 20 requests/day per model: 1 curation + 18 enrichments fits.
     .slice(0, 18);
 }

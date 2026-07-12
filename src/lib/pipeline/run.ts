@@ -16,6 +16,7 @@ export interface PipelineResult {
   fetched: number;
   curated: number;
   published: number;
+  skipped: number;
   date: string;
 }
 
@@ -34,6 +35,14 @@ export async function runPipeline(): Promise<PipelineResult> {
   console.log("Writing summaries and vocabulary with Claude...");
   const enriched = await enrichStories(stories);
   console.log(`Enriched ${enriched.length} stories.`);
+
+  // The homepage shows only the newest published_date, so a mostly-failed run
+  // must not replace a full day's report with a near-empty one.
+  if (enriched.length < Math.ceil(stories.length / 2)) {
+    throw new Error(
+      `Only ${enriched.length}/${stories.length} stories enriched — refusing to publish a partial day.`
+    );
+  }
 
   const rows = enriched.map((e) => ({
     published_date: date,
@@ -72,5 +81,11 @@ export async function runPipeline(): Promise<PipelineResult> {
   if (error) throw new Error(`Supabase upsert failed: ${error.message}`);
 
   console.log(`Published ${rows.length} articles for ${date}.`);
-  return { fetched: items.length, curated: stories.length, published: rows.length, date };
+  return {
+    fetched: items.length,
+    curated: stories.length,
+    published: rows.length,
+    skipped: stories.length - enriched.length,
+    date,
+  };
 }
