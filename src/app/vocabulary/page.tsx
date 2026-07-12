@@ -8,11 +8,16 @@ import {
   IconChevronDown,
   IconSearch,
   IconSliders,
+  IconSparkles,
   IconStar,
   IconTrash,
   IconX,
 } from "@/components/icons";
 import VocabCardBody from "@/components/VocabCardBody";
+import PracticeSession, {
+  PRACTICE_MODES,
+  type PracticeMode,
+} from "@/components/PracticeSession";
 
 const CEFR_LEVELS = ["A2", "B1", "B2", "C1", "C2"] as const;
 
@@ -33,7 +38,10 @@ export default function VocabularyPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [weekCutoff, setWeekCutoff] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [practiceOpen, setPracticeOpen] = useState(false);
+  const [practiceMode, setPracticeMode] = useState<PracticeMode | null>(null);
   const filtersRef = useRef<HTMLDivElement>(null);
+  const practiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,6 +77,38 @@ export default function VocabularyPage() {
     return () => window.removeEventListener("pointerdown", onPointerDown);
   }, [filtersOpen]);
 
+  useEffect(() => {
+    if (!practiceOpen) return;
+    function onPointerDown(e: PointerEvent) {
+      if (practiceRef.current && !practiceRef.current.contains(e.target as Node)) {
+        setPracticeOpen(false);
+      }
+    }
+    window.addEventListener("pointerdown", onPointerDown);
+    return () => window.removeEventListener("pointerdown", onPointerDown);
+  }, [practiceOpen]);
+
+  // Practice results feed the mastery/review counters the profile shows.
+  async function recordReview(id: string, correct: boolean) {
+    setItems(
+      (prev) =>
+        prev?.map((i) =>
+          i.id === id
+            ? {
+                ...i,
+                review_count: i.review_count + 1,
+                mastery: correct ? Math.min(5, i.mastery + 1) : Math.max(0, i.mastery - 1),
+              }
+            : i
+        ) ?? null
+    );
+    await fetch("/api/vocab", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, reviewed: true, correct }),
+    });
+  }
+
   async function toggleFavorite(item: VocabBankItem) {
     setItems((prev) =>
       prev?.map((i) => (i.id === item.id ? { ...i, favorite: !i.favorite } : i)) ?? null
@@ -100,7 +140,7 @@ export default function VocabularyPage() {
       total: all.length,
       favorites: all.filter((i) => i.favorite).length,
       thisWeek: all.filter((i) => Date.parse(i.learned_at) >= weekCutoff).length,
-      advanced: all.filter((i) => i.card.cefr === "C1" || i.card.cefr === "C2").length,
+      mastered: all.filter((i) => i.mastery >= 4).length,
     };
   }, [items, weekCutoff]);
 
@@ -124,21 +164,72 @@ export default function VocabularyPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 pt-12">
-      <h1 className="flex items-center gap-3 text-3xl font-extrabold tracking-tight text-neutral-950 sm:text-4xl">
-        <IconBook size={30} />
-        Vocabulary Bank
-      </h1>
-      <p className="mt-2 text-sm text-neutral-500 sm:text-base">
-        Every word you tap while reading is saved here. Review them until they stick.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="flex items-center gap-3 text-3xl font-extrabold tracking-tight text-neutral-950 sm:text-4xl">
+            <IconBook size={30} />
+            Vocabulary Bank
+          </h1>
+          <p className="mt-2 text-sm text-neutral-500 sm:text-base">
+            Every word you tap while reading is saved here. Review them until they stick.
+          </p>
+        </div>
+
+        {/* Practice — pick a mode, then drill the weakest words */}
+        <div className="relative shrink-0" ref={practiceRef}>
+          <button
+            type="button"
+            onClick={() => setPracticeOpen((v) => !v)}
+            disabled={(items?.length ?? 0) === 0}
+            aria-expanded={practiceOpen}
+            className="flex items-center gap-2 rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-950/20 transition-all duration-150 hover:-translate-y-0.5 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <IconSparkles size={15} />
+            Practice
+            {(items?.length ?? 0) > 0 && (
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-bold">
+                {Math.min(items!.length, 10)}
+              </span>
+            )}
+          </button>
+
+          {practiceOpen && (
+            <div className="animate-pop-in glass-strong absolute right-0 z-30 mt-2 w-72 rounded-3xl p-5 shadow-xl">
+              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                Practice mode
+              </p>
+              <div className="mt-2.5 space-y-2">
+                {PRACTICE_MODES.map((m) => (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => {
+                      setPracticeMode(m.key);
+                      setPracticeOpen(false);
+                    }}
+                    className="w-full rounded-2xl bg-white/70 px-4 py-3 text-left ring-1 ring-neutral-200/70 transition-all hover:-translate-y-0.5 hover:bg-white hover:ring-neutral-950/40"
+                  >
+                    <p className="text-sm font-semibold text-neutral-950">{m.label}</p>
+                    <p className="mt-0.5 text-xs text-neutral-500">{m.hint}</p>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-4 border-t border-neutral-200/70 pt-3 text-xs leading-relaxed text-neutral-400">
+                Each round drills up to 10 words, weakest first. Your answers update each
+                word&apos;s mastery.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Words saved", value: stats.total },
-          { label: "Favorites", value: stats.favorites },
+          { label: "Mastered", value: stats.mastered },
           { label: "This week", value: stats.thisWeek },
-          { label: "C1+ words", value: stats.advanced },
+          { label: "Favorites", value: stats.favorites },
         ].map((stat) => (
           <div key={stat.label} className="glass rounded-2xl px-4 py-3 text-center">
             <p className="text-2xl font-extrabold tracking-tight text-neutral-950">{stat.value}</p>
@@ -336,6 +427,24 @@ export default function VocabularyPage() {
                       {item.card.meaning}
                     </p>
                   )}
+                  {/* Mastery: five pips, filled by correct practice answers */}
+                  <span className="mt-2 flex items-center gap-1">
+                    {[0, 1, 2, 3, 4].map((pip) => (
+                      <span
+                        key={pip}
+                        className={`h-1.5 w-4 rounded-full transition-all duration-300 ${
+                          pip < item.mastery ? "bg-emerald-500" : "bg-neutral-950/10"
+                        }`}
+                      />
+                    ))}
+                    <span className="ml-1 text-[10px] font-medium text-neutral-400">
+                      {item.mastery >= 5
+                        ? "mastered"
+                        : item.review_count > 0
+                          ? `${item.review_count} review${item.review_count === 1 ? "" : "s"}`
+                          : "not practiced"}
+                    </span>
+                  </span>
                 </button>
                 <div className="flex shrink-0 items-center">
                   <button
@@ -387,6 +496,15 @@ export default function VocabularyPage() {
           );
         })}
       </ul>
+
+      {practiceMode && items && items.length > 0 && (
+        <PracticeSession
+          items={items}
+          mode={practiceMode}
+          onClose={() => setPracticeMode(null)}
+          onReviewed={recordReview}
+        />
+      )}
     </div>
   );
 }
