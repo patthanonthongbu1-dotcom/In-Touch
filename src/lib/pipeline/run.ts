@@ -20,6 +20,33 @@ export interface PipelineResult {
   date: string;
 }
 
+// PostgREST takes `in` filters as a GET query string, and a full feed haul
+// (~200-300 URLs, >20KB) overflows the gateway's request limit — so the URLs
+// go up in batches rather than one doomed request.
+const LOOKUP_BATCH = 50;
+
+async function publishedBefore(urls: string[], date: string): Promise<Set<string>> {
+  const db = supabase();
+  const batches: string[][] = [];
+  for (let i = 0; i < urls.length; i += LOOKUP_BATCH) {
+    batches.push(urls.slice(i, i + LOOKUP_BATCH));
+  }
+
+  const found = await Promise.all(
+    batches.map(async (batch) => {
+      const { data, error } = await db
+        .from("articles")
+        .select("source_url")
+        .in("source_url", batch)
+        .lt("published_date", date);
+      if (error) throw new Error(`Supabase lookup failed: ${error.message}`);
+      return (data ?? []).map((row) => row.source_url as string);
+    })
+  );
+
+  return new Set(found.flat());
+}
+
 export async function runPipeline(): Promise<PipelineResult> {
   const date = todayInBangkok();
 
@@ -31,14 +58,7 @@ export async function runPipeline(): Promise<PipelineResult> {
   // Drop items already published in an earlier day's report: each day should
   // surface new coverage, not carry yesterday's cards forward. (Items from
   // today's own report stay eligible so same-day re-runs refresh them.)
-  const { data: existing, error: existingError } = await supabase()
-    .from("articles")
-    .select("source_url, published_date")
-    .in("source_url", fetched.map((item) => item.link));
-  if (existingError) throw new Error(`Supabase lookup failed: ${existingError.message}`);
-  const previouslyPublished = new Set(
-    (existing ?? []).filter((row) => row.published_date < date).map((row) => row.source_url)
-  );
+  const previouslyPublished = await publishedBefore(fetched.map((item) => item.link), date);
   const items = fetched.filter((item) => !previouslyPublished.has(item.link));
   if (previouslyPublished.size > 0) {
     console.log(`Skipping ${fetched.length - items.length} items already published on earlier days.`);
