@@ -32,6 +32,15 @@ export function IconNews(props: IconProps) {
   );
 }
 
+export function IconPhone(props: IconProps) {
+  return (
+    <Base {...props}>
+      <rect x="5" y="2" width="14" height="20" rx="2" />
+      <path d="M12 18h.01" />
+    </Base>
+  );
+}
+
 export function IconBook(props: IconProps) {
   return (
     <Base {...props}>

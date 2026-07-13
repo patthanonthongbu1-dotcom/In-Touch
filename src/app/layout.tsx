@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ViewTransition } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import NavBar from "@/components/NavBar";
 import Tutorial from "@/components/Tutorial";
 import AccountSync from "@/components/AccountSync";
+import ServiceWorker from "@/components/ServiceWorker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,6 +21,19 @@ export const metadata: Metadata = {
   title: "InTouch — Daily News & English Learning",
   description:
     "The day's most important news with AI summaries and vocabulary learning built in.",
+  applicationName: "InTouch",
+  // iOS ignores the web manifest, so the home-screen app is configured here.
+  appleWebApp: {
+    capable: true,
+    title: "InTouch",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+  // The installed app runs edge to edge; keep content clear of the notch.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -36,6 +50,7 @@ export default function RootLayout({
         <NavBar />
         <Tutorial />
         <AccountSync />
+        <ServiceWorker />
         <main className="w-full flex-1">
           <ViewTransition
             enter={{ "nav-forward": "nav-forward", "nav-back": "nav-back", default: "page-enter" }}

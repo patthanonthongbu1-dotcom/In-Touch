@@ -11,11 +11,13 @@ import {
 } from "@/lib/settings";
 import { useUser } from "@/lib/use-user";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import InstallApp from "@/components/InstallApp";
 import {
   IconBook,
   IconClock,
   IconGear,
   IconNews,
+  IconPhone,
   IconRefresh,
   IconSliders,
   IconSparkles,
@@ -313,6 +315,17 @@ export default function SettingsPage() {
       </section>
 
       <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-950">
+          <IconPhone size={17} /> Install as an app
+        </h2>
+        <p className="mt-1 text-sm leading-relaxed text-neutral-500">
+          Put InTouch on your home screen and it opens like a real app — full screen, its own icon,
+          no browser bar. Your report is still there to read when you&apos;re offline.
+        </p>
+        <InstallApp />
+      </section>
+
+      <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
         <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-950"><IconSparkles size={17} /> New here?</h2>
         <p className="mt-1 text-sm text-neutral-500">
           Replay the quick intro tour whenever you like.
@@ -325,6 +338,10 @@ export default function SettingsPage() {
           Show tutorial again
         </button>
       </section>
+
+      <p className="mt-8 text-center text-xs text-neutral-400">
+        InTouch v{process.env.NEXT_PUBLIC_APP_VERSION}
+      </p>
     </div>
   );
 }
