@@ -18,19 +18,74 @@ import VocabCardBody from "@/components/VocabCardBody";
 
 const CEFR_LEVELS = ["A2", "B1", "B2", "C1", "C2"] as const;
 
-type SortKey = "newest" | "alpha";
+// Levels answer two opposite questions — "drill my C1 words" and "hide the easy
+// ones I already know" — so the chips carry a mode instead of only ever meaning
+// "show these".
+type LevelMode = "only" | "hide";
+
+type PosKey = "noun" | "verb" | "adjective" | "adverb" | "phrase" | "other";
+
+const POS_LABELS: Record<PosKey, string> = {
+  noun: "Noun",
+  verb: "Verb",
+  adjective: "Adjective",
+  adverb: "Adverb",
+  phrase: "Phrase",
+  other: "Other",
+};
+
+const POS_ORDER: PosKey[] = ["noun", "verb", "adjective", "adverb", "phrase", "other"];
+
+/**
+ * partOfSpeech is free text from the model — "noun", "adj", "phrasal verb",
+ * "noun phrase" — so fold it into buckets a filter can actually use. Phrases
+ * are checked first: a "noun phrase" is a phrase, not a noun.
+ */
+function posKey(raw: string): PosKey {
+  const value = raw.toLowerCase().trim();
+  if (value.startsWith("adv")) return "adverb";
+  if (value.startsWith("adj")) return "adjective";
+  if (value.includes("phras")) return "phrase";
+  if (value.includes("verb")) return "verb";
+  if (value.includes("noun")) return "noun";
+  return "other";
+}
+
+type Progress = "new" | "learning" | "mastered";
+
+const PROGRESS_LABELS: Record<Progress, string> = {
+  new: "Not practiced",
+  learning: "Learning",
+  mastered: "Mastered",
+};
+
+const PROGRESS_ORDER: Progress[] = ["new", "learning", "mastered"];
+
+function progressOf(mastery: number): Progress {
+  if (mastery <= 0) return "new";
+  return mastery >= 4 ? "mastered" : "learning";
+}
+
+type SortKey = "practice" | "newest" | "alpha" | "strongest";
 
 const SORTS: { key: SortKey; label: string }[] = [
+  { key: "practice", label: "Needs practice" },
   { key: "newest", label: "Newest first" },
   { key: "alpha", label: "A → Z" },
+  { key: "strongest", label: "Strongest" },
 ];
+
+const DEFAULT_SORT: SortKey = "practice";
 
 export default function VocabularyPage() {
   const [items, setItems] = useState<VocabBankItem[] | null>(null);
   const [query, setQuery] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [cefr, setCefr] = useState<Set<string>>(new Set());
-  const [sort, setSort] = useState<SortKey>("newest");
+  const [levelMode, setLevelMode] = useState<LevelMode>("only");
+  const [types, setTypes] = useState<Set<PosKey>>(new Set());
+  const [progress, setProgress] = useState<Set<Progress>>(new Set());
+  const [sort, setSort] = useState<SortKey>(DEFAULT_SORT);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [weekCutoff, setWeekCutoff] = useState(0);
@@ -88,13 +143,22 @@ export default function VocabularyPage() {
     await fetch(`/api/vocab?id=${item.id}`, { method: "DELETE" });
   }
 
-  function toggleCefr(level: string) {
-    setCefr((prev) => {
+  function toggleIn<T>(setter: (fn: (prev: Set<T>) => Set<T>) => void, value: T) {
+    setter((prev) => {
       const next = new Set(prev);
-      if (next.has(level)) next.delete(level);
-      else next.add(level);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
       return next;
     });
+  }
+
+  function clearFilters() {
+    setFavoritesOnly(false);
+    setCefr(new Set());
+    setLevelMode("only");
+    setTypes(new Set());
+    setProgress(new Set());
+    setSort(DEFAULT_SORT);
   }
 
   const stats = useMemo(() => {
@@ -107,23 +171,71 @@ export default function VocabularyPage() {
     };
   }, [items, weekCutoff]);
 
+  // Chip counts, so the filter panel shows what's actually in the bank rather
+  // than offering levels and types that would return nothing.
+  const counts = useMemo(() => {
+    const level = new Map<string, number>();
+    const type = new Map<PosKey, number>();
+    const prog = new Map<Progress, number>();
+    for (const item of items ?? []) {
+      level.set(item.card.cefr, (level.get(item.card.cefr) ?? 0) + 1);
+      const key = posKey(item.card.partOfSpeech);
+      type.set(key, (type.get(key) ?? 0) + 1);
+      const p = progressOf(item.mastery);
+      prog.set(p, (prog.get(p) ?? 0) + 1);
+    }
+    return { level, type, prog };
+  }, [items]);
+
   const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
     const filtered = (items ?? []).filter((item) => {
       if (favoritesOnly && !item.favorite) return false;
-      if (cefr.size > 0 && !cefr.has(item.card.cefr)) return false;
-      if (query && !item.word.toLowerCase().includes(query.toLowerCase())) return false;
+
+      // "only" keeps the picked levels; "hide" drops them.
+      if (cefr.size > 0) {
+        const picked = cefr.has(item.card.cefr);
+        if (levelMode === "only" ? !picked : picked) return false;
+      }
+
+      if (types.size > 0 && !types.has(posKey(item.card.partOfSpeech))) return false;
+      if (progress.size > 0 && !progress.has(progressOf(item.mastery))) return false;
+
+      if (needle) {
+        const haystack = `${item.word} ${item.card.meaning} ${item.card.thai}`.toLowerCase();
+        if (!haystack.includes(needle)) return false;
+      }
       return true;
     });
+
     const sorted = [...filtered];
-    if (sort === "alpha") {
-      sorted.sort((a, b) => a.word.localeCompare(b.word));
-    } else {
-      sorted.sort((a, b) => Date.parse(b.learned_at) - Date.parse(a.learned_at));
+    switch (sort) {
+      case "alpha":
+        sorted.sort((a, b) => a.word.localeCompare(b.word));
+        break;
+      case "newest":
+        sorted.sort((a, b) => Date.parse(b.learned_at) - Date.parse(a.learned_at));
+        break;
+      case "strongest":
+        sorted.sort((a, b) => b.mastery - a.mastery || Date.parse(b.learned_at) - Date.parse(a.learned_at));
+        break;
+      case "practice":
+        // Weakest first, and among equally weak words the ones you've been
+        // sitting on longest — those are the ones actually going stale.
+        sorted.sort(
+          (a, b) => a.mastery - b.mastery || Date.parse(a.learned_at) - Date.parse(b.learned_at)
+        );
+        break;
     }
     return sorted;
-  }, [items, favoritesOnly, cefr, query, sort]);
+  }, [items, favoritesOnly, cefr, levelMode, types, progress, query, sort]);
 
-  const activeFilterCount = cefr.size + (favoritesOnly ? 1 : 0) + (sort !== "newest" ? 1 : 0);
+  const activeFilterCount =
+    cefr.size +
+    types.size +
+    progress.size +
+    (favoritesOnly ? 1 : 0) +
+    (sort !== DEFAULT_SORT ? 1 : 0);
 
   return (
     <div className="mx-auto max-w-4xl px-4 pt-12">
@@ -191,6 +303,8 @@ export default function VocabularyPage() {
             type="button"
             onClick={() => setFiltersOpen((v) => !v)}
             aria-expanded={filtersOpen}
+            // The label is hidden on phones, so name the button for screen readers.
+            aria-label="Filters"
             className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
               filtersOpen || activeFilterCount > 0
                 ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/20"
@@ -207,7 +321,7 @@ export default function VocabularyPage() {
           </button>
 
           {filtersOpen && (
-            <div className="animate-pop-in glass-strong absolute right-0 z-30 mt-2 w-64 rounded-3xl p-5 shadow-xl">
+            <div className="animate-pop-in glass-strong absolute right-0 z-30 mt-2 max-h-[70vh] w-72 overflow-y-auto rounded-3xl p-5 shadow-xl">
               <button
                 type="button"
                 onClick={() => setFavoritesOnly((v) => !v)}
@@ -220,17 +334,78 @@ export default function VocabularyPage() {
                 <IconStar size={11} filled={favoritesOnly} /> Favorites only
               </button>
 
-              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                Word level
-              </p>
+              <div className="mt-4 flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                  Word level
+                </p>
+                {/* Show only these levels, or hide them — the same chips, both ways round. */}
+                <div className="flex rounded-full bg-white/70 p-0.5 ring-1 ring-neutral-200/70">
+                  {(
+                    [
+                      ["only", "Show"],
+                      ["hide", "Hide"],
+                    ] as const
+                  ).map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setLevelMode(mode)}
+                      aria-pressed={levelMode === mode}
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition-all ${
+                        levelMode === mode
+                          ? "bg-neutral-950 text-white"
+                          : "text-neutral-500 hover:text-neutral-950"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="mt-2.5 flex flex-wrap gap-2">
                 {CEFR_LEVELS.map((level) => {
                   const on = cefr.has(level);
+                  const n = counts.level.get(level) ?? 0;
                   return (
                     <button
                       key={level}
                       type="button"
-                      onClick={() => toggleCefr(level)}
+                      disabled={n === 0}
+                      onClick={() => toggleIn(setCefr, level)}
+                      className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-35 ${
+                        on
+                          ? levelMode === "hide"
+                            ? "bg-red-600 text-white"
+                            : "bg-neutral-950 text-white"
+                          : "border border-neutral-300 bg-white/70 text-neutral-600 hover:border-neutral-950 hover:text-neutral-950"
+                      }`}
+                    >
+                      {on && (levelMode === "hide" ? <IconX size={11} /> : <IconCheck size={11} />)}
+                      {level}
+                      <span className={on ? "opacity-70" : "text-neutral-400"}>{n}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {cefr.size > 0 && (
+                <p className="mt-2 text-[11px] text-neutral-400">
+                  {levelMode === "only"
+                    ? `Showing only ${[...cefr].sort().join(", ")}.`
+                    : `Hiding ${[...cefr].sort().join(", ")}.`}
+                </p>
+              )}
+
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                Word type
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {POS_ORDER.filter((key) => (counts.type.get(key) ?? 0) > 0).map((key) => {
+                  const on = types.has(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleIn(setTypes, key)}
                       className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                         on
                           ? "bg-neutral-950 text-white"
@@ -238,7 +413,37 @@ export default function VocabularyPage() {
                       }`}
                     >
                       {on && <IconCheck size={11} />}
-                      {level}
+                      {POS_LABELS[key]}
+                      <span className={on ? "opacity-70" : "text-neutral-400"}>
+                        {counts.type.get(key)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                Progress
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {PROGRESS_ORDER.map((key) => {
+                  const on = progress.has(key);
+                  const n = counts.prog.get(key) ?? 0;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      disabled={n === 0}
+                      onClick={() => toggleIn(setProgress, key)}
+                      className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-35 ${
+                        on
+                          ? "bg-neutral-950 text-white"
+                          : "border border-neutral-300 bg-white/70 text-neutral-600 hover:border-neutral-950 hover:text-neutral-950"
+                      }`}
+                    >
+                      {on && <IconCheck size={11} />}
+                      {PROGRESS_LABELS[key]}
+                      <span className={on ? "opacity-70" : "text-neutral-400"}>{n}</span>
                     </button>
                   );
                 })}
@@ -267,11 +472,7 @@ export default function VocabularyPage() {
               <div className="mt-5 flex items-center justify-between border-t border-neutral-200/70 pt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setFavoritesOnly(false);
-                    setCefr(new Set());
-                    setSort("newest");
-                  }}
+                  onClick={clearFilters}
                   disabled={activeFilterCount === 0}
                   className="flex items-center gap-1 text-xs font-medium text-neutral-400 transition-colors hover:text-neutral-950 disabled:opacity-40"
                 >
@@ -319,9 +520,31 @@ export default function VocabularyPage() {
         </p>
       )}
 
+      {items !== null && items.length > 0 && visible.length > 0 && (
+        <div className="mt-6 flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-xs font-medium text-neutral-400">
+            {visible.length === items.length
+              ? `${items.length} word${items.length === 1 ? "" : "s"}`
+              : `Showing ${visible.length} of ${items.length} words`}
+            {sort === "practice" && visible.length > 1 && (
+              <span className="text-neutral-300"> · weakest first</span>
+            )}
+          </p>
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="flex items-center gap-1 text-xs font-medium text-neutral-400 transition-colors hover:text-neutral-950"
+            >
+              <IconX size={11} /> Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
       <ul
-        key={`${favoritesOnly}|${[...cefr].sort().join(",")}|${sort}`}
-        className="mt-6 grid gap-4 sm:grid-cols-2"
+        key={`${favoritesOnly}|${levelMode}|${[...cefr].sort().join(",")}|${[...types].sort().join(",")}|${[...progress].sort().join(",")}|${sort}`}
+        className="mt-4 grid gap-4 sm:grid-cols-2"
       >
         {visible.map((item, i) => {
           const open = openId === item.id;

@@ -396,6 +396,8 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
             type="button"
             onClick={() => setFiltersOpen((v) => !v)}
             aria-expanded={filtersOpen}
+            // The label is hidden on phones, so name the button for screen readers.
+            aria-label="Filters"
             className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-150 ${
               filtersOpen || activeFilterCount > 0
                 ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/20"
