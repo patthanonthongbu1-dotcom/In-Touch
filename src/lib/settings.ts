@@ -10,7 +10,16 @@ export interface AppSettings {
   readArticles: string[];
   cefrLevel: string | null; // estimated by the level test
   cefrTestedAt: string | null;
+  // Read by the nightly pipeline, not just the UI: how many Thailand stories
+  // tomorrow's report should aim for.
+  thaiStoriesPerDay: number;
+  defaultSort: "latest" | "top";
+  defaultLevels: string[]; // CEFR filter Today starts with; empty = show all
+  quickReadsOnly: boolean;
 }
+
+export const THAI_PER_DAY_MIN = 3;
+export const THAI_PER_DAY_MAX = 8;
 
 export const DEFAULT_SETTINGS: AppSettings = {
   hiddenCategories: [],
@@ -19,6 +28,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   readArticles: [],
   cefrLevel: null,
   cefrTestedAt: null,
+  thaiStoriesPerDay: 6,
+  defaultSort: "latest",
+  defaultLevels: [],
+  quickReadsOnly: false,
 };
 
 const STORAGE_KEY = "intouch-settings";

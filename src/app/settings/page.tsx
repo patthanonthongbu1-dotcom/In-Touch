@@ -3,16 +3,31 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CATEGORIES, CATEGORY_META, type Category } from "@/lib/types";
-import { saveSettings, useSettings } from "@/lib/settings";
+import {
+  saveSettings,
+  useSettings,
+  THAI_PER_DAY_MAX,
+  THAI_PER_DAY_MIN,
+} from "@/lib/settings";
 import { useUser } from "@/lib/use-user";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import {
+  IconBook,
+  IconClock,
   IconGear,
+  IconNews,
   IconRefresh,
   IconSliders,
   IconSparkles,
   IconUser,
 } from "@/components/icons";
+
+const CEFR_LEVELS = ["B1", "B2", "C1", "C2"] as const;
+
+const THAI_COUNTS = Array.from(
+  { length: THAI_PER_DAY_MAX - THAI_PER_DAY_MIN + 1 },
+  (_, i) => THAI_PER_DAY_MIN + i
+);
 
 export default function SettingsPage() {
   const settings = useSettings();
@@ -34,6 +49,13 @@ export default function SettingsPage() {
     saveSettings({ ...settings, hiddenCategories: hidden });
   }
 
+  function toggleLevel(level: string) {
+    const levels = settings.defaultLevels.includes(level)
+      ? settings.defaultLevels.filter((l) => l !== level)
+      : [...settings.defaultLevels, level];
+    saveSettings({ ...settings, defaultLevels: levels });
+  }
+
   async function runPipeline() {
     if (!settings.pipelineSecret) {
       setPipelineState("error");
@@ -49,7 +71,7 @@ export default function SettingsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
       setPipelineState("done");
-      setPipelineMessage(`✓ Published ${data.published} stories for ${data.date}. Head to Today and hit Refresh!`);
+      setPipelineMessage(`✓ Published ${data.published} stories for ${data.date}. Head to Today to read them.`);
     } catch (e) {
       setPipelineState("error");
       setPipelineMessage(e instanceof Error ? e.message : "The pipeline failed — try again later.");
@@ -135,6 +157,120 @@ export default function SettingsPage() {
             {settings.hiddenCategories.length === 1 ? "y" : "ies"} hidden from your feed.
           </p>
         )}
+      </section>
+
+      <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-950">
+          <IconNews size={17} /> Thailand coverage
+        </h2>
+        <p className="mt-1 text-sm leading-relaxed text-neutral-500">
+          How many 🇹🇭 Thailand stories you want each day. This one reaches the newsroom, not just
+          your feed: the report is written to cover it, and grows to fit rather than pushing your
+          world news out.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {THAI_COUNTS.map((count) => {
+            const active = settings.thaiStoriesPerDay === count;
+            return (
+              <button
+                key={count}
+                type="button"
+                onClick={() => saveSettings({ ...settings, thaiStoriesPerDay: count })}
+                aria-pressed={active}
+                className={`h-11 w-11 rounded-full text-sm font-semibold transition-all duration-200 ${
+                  active
+                    ? "bg-neutral-950 text-white shadow-lg shadow-neutral-950/20"
+                    : "border border-neutral-300 bg-white/60 text-neutral-500 hover:border-neutral-950 hover:text-neutral-950"
+                }`}
+              >
+                {count}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-4 text-xs text-neutral-400">
+          Your feed follows this straight away. Tomorrow&apos;s report, written around 5:00, is the
+          first one commissioned with it in mind.
+        </p>
+      </section>
+
+      <section className="glass mt-5 rounded-3xl p-6 sm:p-8">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-neutral-950">
+          <IconBook size={17} /> How Today opens
+        </h2>
+        <p className="mt-1 text-sm text-neutral-500">
+          The filters your feed starts with, so you don&apos;t reset them every morning.
+        </p>
+
+        <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+          Sort by
+        </p>
+        <div className="mt-2.5 inline-flex rounded-full bg-white/70 p-1 ring-1 ring-neutral-200/70">
+          {(
+            [
+              ["latest", "🕐 Latest"],
+              ["top", "✨ Top stories"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => saveSettings({ ...settings, defaultSort: value })}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
+                settings.defaultSort === value
+                  ? "bg-neutral-950 text-white shadow"
+                  : "text-neutral-500 hover:text-neutral-950"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+          Reading level
+        </p>
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          {CEFR_LEVELS.map((level) => {
+            const on = settings.defaultLevels.includes(level);
+            return (
+              <button
+                key={level}
+                type="button"
+                onClick={() => toggleLevel(level)}
+                aria-pressed={on}
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
+                  on
+                    ? "bg-neutral-950 text-white"
+                    : "border border-neutral-300 bg-white/70 text-neutral-600 hover:border-neutral-950 hover:text-neutral-950"
+                }`}
+              >
+                {level}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2.5 text-xs text-neutral-400">
+          {settings.defaultLevels.length === 0
+            ? "Showing every level."
+            : `Showing only ${[...settings.defaultLevels].sort().join(", ")}.`}
+        </p>
+
+        <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+          Length
+        </p>
+        <button
+          type="button"
+          onClick={() => saveSettings({ ...settings, quickReadsOnly: !settings.quickReadsOnly })}
+          aria-pressed={settings.quickReadsOnly}
+          className={`mt-2.5 flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
+            settings.quickReadsOnly
+              ? "bg-neutral-950 text-white"
+              : "border border-neutral-300 bg-white/70 text-neutral-600 hover:border-neutral-950 hover:text-neutral-950"
+          }`}
+        >
+          <IconClock size={11} /> Quick reads only (≤ 2 min)
+        </button>
       </section>
 
       <section className="glass mt-5 rounded-3xl p-6 sm:p-8">

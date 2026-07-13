@@ -2,6 +2,7 @@ import { fetchAllFeeds } from "./fetch";
 import { curateStories } from "./curate";
 import { enrichStories } from "./enrich";
 import { supabase } from "../supabase";
+import { DEFAULT_SETTINGS, THAI_PER_DAY_MAX, THAI_PER_DAY_MIN } from "../settings";
 
 function todayInBangkok(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date());
@@ -47,6 +48,30 @@ async function publishedBefore(urls: string[], date: string): Promise<Set<string
   return new Set(found.flat());
 }
 
+/**
+ * How many Thailand stories to write. One report serves every reader, so it is
+ * curated for the most Thailand-hungry account and each reader's feed trims it
+ * back to the number they chose. Nobody's setting is a lie, and no one reader
+ * can shrink the report out from under another.
+ */
+async function thaiStoriesPerDay(): Promise<number> {
+  const { data, error } = await supabase().from("user_settings").select("settings");
+
+  if (error) {
+    console.warn(`Couldn't read saved settings (${error.message}) — using the default.`);
+    return DEFAULT_SETTINGS.thaiStoriesPerDay;
+  }
+
+  const wanted = (data ?? [])
+    .map((row) => (row.settings as { thaiStoriesPerDay?: unknown } | null)?.thaiStoriesPerDay)
+    .filter((n): n is number => typeof n === "number" && Number.isFinite(n))
+    .map((n) => Math.min(THAI_PER_DAY_MAX, Math.max(THAI_PER_DAY_MIN, Math.round(n))));
+
+  return wanted.length > 0
+    ? Math.max(...wanted)
+    : DEFAULT_SETTINGS.thaiStoriesPerDay;
+}
+
 export async function runPipeline(): Promise<PipelineResult> {
   const date = todayInBangkok();
 
@@ -65,9 +90,12 @@ export async function runPipeline(): Promise<PipelineResult> {
   }
   if (items.length === 0) throw new Error("Nothing new since the last report.");
 
-  console.log("Curating with Claude...");
-  const stories = await curateStories(items);
-  console.log(`Selected ${stories.length} stories.`);
+  const thaiLimit = await thaiStoriesPerDay();
+  console.log(`Curating with Claude (up to ${thaiLimit} Thailand stories)...`);
+  const stories = await curateStories(items, thaiLimit);
+  console.log(
+    `Selected ${stories.length} stories (${stories.filter((s) => s.category === "thailand").length} from Thailand).`
+  );
 
   console.log("Writing summaries and vocabulary with Claude...");
   const enriched = await enrichStories(stories);

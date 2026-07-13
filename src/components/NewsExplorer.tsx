@@ -175,13 +175,23 @@ function ArticleCard({
 }
 
 export default function NewsExplorer({ articles }: { articles: Article[] }) {
-  const { hiddenCategories, readArticles } = useSettings();
+  const {
+    hiddenCategories,
+    readArticles,
+    defaultSort,
+    defaultLevels,
+    quickReadsOnly,
+    thaiStoriesPerDay,
+  } = useSettings();
   const [activeCategory, setActiveCategory] = useState<Filter>("all");
-  const [sort, setSort] = useState<Sort>("latest");
-  const [cefr, setCefr] = useState<Set<string>>(new Set());
-  const [shortOnly, setShortOnly] = useState(false);
+  // Settings seed the feed's opening state; changing a filter here is a
+  // one-off for this visit and doesn't rewrite the saved preference.
+  const [sort, setSort] = useState<Sort>(defaultSort);
+  const [cefr, setCefr] = useState<Set<string>>(() => new Set(defaultLevels));
+  const [shortOnly, setShortOnly] = useState(quickReadsOnly);
   const [expanded, setExpanded] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const touchedRef = useRef(false);
   const filtersRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const [indicator, setIndicator] = useState<{
@@ -202,10 +212,29 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
     return () => window.removeEventListener("pointerdown", onPointerDown);
   }, [filtersOpen]);
 
-  const feedArticles = useMemo(
-    () => articles.filter((a) => !hiddenCategories.includes(a.category as Category)),
-    [articles, hiddenCategories]
-  );
+  // Settings arrive from localStorage only after hydration, so the saved
+  // filters land here rather than in useState — until the reader touches a
+  // filter themselves, at which point this visit is theirs to steer.
+  useEffect(() => {
+    if (touchedRef.current) return;
+    setSort(defaultSort);
+    setCefr(new Set(defaultLevels));
+    setShortOnly(quickReadsOnly);
+  }, [defaultSort, defaultLevels, quickReadsOnly]);
+
+  // One report serves everyone, curated for whoever asked for the most Thai
+  // stories — so each reader keeps only the number they chose, most important
+  // first. Articles arrive sorted by importance.
+  const feedArticles = useMemo(() => {
+    const shown = articles.filter((a) => !hiddenCategories.includes(a.category as Category));
+    const thaiKept = new Set(
+      shown
+        .filter((a) => a.category === "thailand")
+        .slice(0, thaiStoriesPerDay)
+        .map((a) => a.id)
+    );
+    return shown.filter((a) => a.category !== "thailand" || thaiKept.has(a.id));
+  }, [articles, hiddenCategories, thaiStoriesPerDay]);
 
   const counts = useMemo(() => {
     const map = new Map<Category, number>();
@@ -248,12 +277,29 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
   }, [category, expanded, presentCategories.length, feedArticles.length]);
 
   function toggleCefr(level: string) {
+    touchedRef.current = true;
     setCefr((prev) => {
       const next = new Set(prev);
       if (next.has(level)) next.delete(level);
       else next.add(level);
       return next;
     });
+  }
+
+  function chooseSort(value: Sort) {
+    touchedRef.current = true;
+    setSort(value);
+  }
+
+  function toggleShortOnly() {
+    touchedRef.current = true;
+    setShortOnly((v) => !v);
+  }
+
+  function clearFilters() {
+    touchedRef.current = true;
+    setCefr(new Set());
+    setShortOnly(false);
   }
 
   const visible = feedArticles
@@ -380,7 +426,7 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
                   <button
                     key={value}
                     type="button"
-                    onClick={() => setSort(value)}
+                    onClick={() => chooseSort(value)}
                     className={`flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                       sort === value
                         ? "bg-neutral-950 text-white shadow"
@@ -421,7 +467,7 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
               </p>
               <button
                 type="button"
-                onClick={() => setShortOnly((v) => !v)}
+                onClick={toggleShortOnly}
                 className={`mt-2.5 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                   shortOnly
                     ? "bg-neutral-950 text-white"
@@ -434,10 +480,7 @@ export default function NewsExplorer({ articles }: { articles: Article[] }) {
               <div className="mt-5 flex items-center justify-between border-t border-neutral-200/70 pt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setCefr(new Set());
-                    setShortOnly(false);
-                  }}
+                  onClick={clearFilters}
                   disabled={activeFilterCount === 0}
                   className="flex items-center gap-1 text-xs font-medium text-neutral-400 transition-colors hover:text-neutral-950 disabled:opacity-40"
                 >
