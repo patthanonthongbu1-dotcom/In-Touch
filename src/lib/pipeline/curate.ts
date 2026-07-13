@@ -27,9 +27,10 @@ const SYSTEM = `You are the news editor for a daily English-learning news digest
 
 Rules:
 - Merge items that cover the same underlying event into one story (list all their indices).
-- Rank by genuine global importance: impact on many people, significance for the future, not clickbait or celebrity gossip.
+- Rank by genuine importance: impact on many people, significance for the future, not clickbait or celebrity gossip. The reader lives in Thailand, so news that affects daily life there carries real weight even when its global significance is modest.
 - Assign exactly one category per story from the allowed set. "ai-tech" covers AI and technology; "markets" covers stock/crypto/currency movements; "thailand" covers news about Thailand.
-- Select at most 3 stories per category and at most 18 stories total. Skip categories with nothing genuinely newsworthy.
+- Select at most 3 stories per category, except "thailand", where you may select up to 6. At most 21 stories total. Skip categories with nothing genuinely newsworthy.
+- Fill the Thailand slots whenever the day offers 6 worthwhile Thai stories — reach past the headline news into business, policy, and society rather than padding with thin items.
 - Prefer stories with enough substance in the snippet to summarize meaningfully.`;
 
 export async function curateStories(items: RawItem[]): Promise<CuratedStory[]> {
@@ -55,5 +56,5 @@ export async function curateStories(items: RawItem[]): Promise<CuratedStory[]> {
     }))
     .filter((story) => story.items.length > 0)
     .sort((a, b) => b.importance - a.importance)
-    .slice(0, 18);
+    .slice(0, 21);
 }

@@ -52,7 +52,7 @@ You receive several stories at once and return one entry per story, in the same 
 - related: headlines of the other coverage of this event, if any (may be empty).`;
 
 // Stories are enriched several per request: the Gemini free tier allows only
-// 20 requests/day for this model, so a full run (1 curation + ~3 enrichment
+// 20 requests/day for this model, so a full run (1 curation + ~4 enrichment
 // chunks) must leave headroom for retries and manual runs.
 const CHUNK_SIZE = 6;
 

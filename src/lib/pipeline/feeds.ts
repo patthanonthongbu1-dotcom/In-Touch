@@ -40,7 +40,9 @@ export const FEEDS: FeedSource[] = [
 
   // Thailand
   { url: "https://www.bangkokpost.com/rss/data/topstories.xml", source: "Bangkok Post", categoryHint: "thailand" },
+  { url: "https://www.bangkokpost.com/rss/data/thailand.xml", source: "Bangkok Post", categoryHint: "thailand" },
   { url: "https://www.khaosodenglish.com/feed/", source: "Khaosod English", categoryHint: "thailand" },
+  { url: "https://thethaiger.com/news/feed", source: "The Thaiger", categoryHint: "thailand" },
 
   // Markets
   { url: "https://www.cnbc.com/id/100003114/device/rss/rss.html", source: "CNBC Markets", categoryHint: "markets" },
