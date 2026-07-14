@@ -90,19 +90,44 @@ async function enrichChunk(stories: CuratedStory[]): Promise<EnrichedStory[]> {
   });
 }
 
-export async function enrichStories(stories: CuratedStory[]): Promise<EnrichedStory[]> {
-  const enriched: EnrichedStory[] = [];
+// A chunk takes ~135s. Run four of them end to end and the pipeline needs ~600s,
+// which is twice the 300s ceiling the cron's function is killed at — so nothing
+// was ever written. Chunks don't depend on each other, so they go out together.
+const MAX_CONCURRENT = 4;
+
+/**
+ * `onChunk` receives each batch the moment it lands, so its stories can be
+ * published before the rest of the run finishes. A run that dies late still
+ * leaves a real report behind instead of nothing at all.
+ */
+export async function enrichStories(
+  stories: CuratedStory[],
+  onChunk?: (batch: EnrichedStory[]) => Promise<void>
+): Promise<EnrichedStory[]> {
+  const chunks: CuratedStory[][] = [];
   for (let i = 0; i < stories.length; i += CHUNK_SIZE) {
-    const chunk = stories.slice(i, i + CHUNK_SIZE);
-    try {
-      enriched.push(...(await enrichChunk(chunk)));
-    } catch (error) {
-      console.warn(
-        `Enrichment chunk failed, skipping ${chunk.length} stories (${chunk
-          .map((s) => `"${s.headline}"`)
-          .join(", ")}): ${error}`
-      );
-    }
+    chunks.push(stories.slice(i, i + CHUNK_SIZE));
+  }
+
+  const enriched: EnrichedStory[] = [];
+  for (let i = 0; i < chunks.length; i += MAX_CONCURRENT) {
+    const wave = await Promise.all(
+      chunks.slice(i, i + MAX_CONCURRENT).map(async (chunk) => {
+        try {
+          const batch = await enrichChunk(chunk);
+          await onChunk?.(batch);
+          return batch;
+        } catch (error) {
+          console.warn(
+            `Enrichment chunk failed, skipping ${chunk.length} stories (${chunk
+              .map((s) => `"${s.headline}"`)
+              .join(", ")}): ${error}`
+          );
+          return [];
+        }
+      })
+    );
+    enriched.push(...wave.flat());
   }
   return enriched;
 }

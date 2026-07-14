@@ -71,3 +71,25 @@ create index if not exists article_reads_user_date_idx on article_reads (user_id
 
 alter table user_settings enable row level security;
 alter table article_reads enable row level security;
+
+-- ---- Pipeline run log ----
+-- Vercel's Hobby plan discards runtime logs about an hour after a request, so a
+-- cron that fails at 05:00 has left nothing to read by breakfast. Each run writes
+-- its own outcome here, and the row outlives the logs.
+
+create table if not exists pipeline_runs (
+  id uuid primary key default gen_random_uuid(),
+  started_at timestamptz not null default now(),
+  finished_at timestamptz,                       -- null = the run never returned (killed mid-flight)
+  published_date date,                           -- the Bangkok day it was writing
+  status text not null default 'running',        -- running | ok | partial | failed
+  fetched int not null default 0,
+  curated int not null default 0,
+  published int not null default 0,
+  duration_ms int,
+  error text
+);
+
+create index if not exists pipeline_runs_started_idx on pipeline_runs (started_at desc);
+
+alter table pipeline_runs enable row level security;

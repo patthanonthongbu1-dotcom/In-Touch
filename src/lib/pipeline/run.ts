@@ -1,6 +1,6 @@
 import { fetchAllFeeds } from "./fetch";
 import { curateStories } from "./curate";
-import { enrichStories } from "./enrich";
+import { enrichStories, type EnrichedStory } from "./enrich";
 import { supabase } from "../supabase";
 import { DEFAULT_SETTINGS, THAI_PER_DAY_MAX, THAI_PER_DAY_MIN } from "../settings";
 
@@ -19,6 +19,35 @@ export interface PipelineResult {
   published: number;
   skipped: number;
   date: string;
+  durationMs: number;
+}
+
+/**
+ * Vercel's Hobby plan drops runtime logs after about an hour, so a cron that
+ * fails at 05:00 has left no evidence by the time anyone looks. Every run
+ * records what it did here instead. Logging is best-effort: a missing table or
+ * a failed insert must never take the report down with it.
+ */
+async function startRun(date: string): Promise<string | null> {
+  const { data, error } = await supabase()
+    .from("pipeline_runs")
+    .insert({ published_date: date, status: "running" })
+    .select("id")
+    .single();
+  if (error) {
+    console.warn(`Couldn't open a run log (${error.message}) — continuing unlogged.`);
+    return null;
+  }
+  return data.id as string;
+}
+
+async function finishRun(id: string | null, fields: Record<string, unknown>): Promise<void> {
+  if (!id) return;
+  const { error } = await supabase()
+    .from("pipeline_runs")
+    .update({ ...fields, finished_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) console.warn(`Couldn't close the run log: ${error.message}`);
 }
 
 // PostgREST takes `in` filters as a GET query string, and a full feed haul
@@ -72,9 +101,68 @@ async function thaiStoriesPerDay(): Promise<number> {
     : DEFAULT_SETTINGS.thaiStoriesPerDay;
 }
 
+// Columns added after the initial schema; stripped if the DB lacks them.
+const OPTIONAL_COLUMNS = ["image_url", "source_published_at"];
+
+/** Writes one batch of finished stories. Returns how many reached the table. */
+async function publish(enriched: EnrichedStory[], date: string): Promise<number> {
+  const rows = enriched.map((e) => ({
+    published_date: date,
+    headline: e.story.headline,
+    source: [...new Set(e.story.items.map((i) => i.source))].join(", "),
+    source_url: e.story.items[0].link,
+    category: e.story.category,
+    summary: e.summary,
+    why_it_matters: e.whyItMatters,
+    difficulty: e.difficulty,
+    reading_time_min: e.readingTimeMin,
+    importance: e.story.importance,
+    vocabulary: e.vocabulary,
+    related: e.related,
+    image_url: e.story.items.find((i) => i.image)?.image ?? null,
+    source_published_at: earliestPublished(e.story.items.map((i) => i.publishedAt)),
+  }));
+
+  let { error } = await supabase().from("articles").upsert(rows, { onConflict: "source_url" });
+  if (error && OPTIONAL_COLUMNS.some((col) => error!.message.includes(col))) {
+    console.warn(
+      `Optional columns missing — publishing without them. Run supabase/schema.sql migrations. (${error.message})`
+    );
+    const stripped = rows.map((row) => {
+      const copy: Record<string, unknown> = { ...row };
+      for (const col of OPTIONAL_COLUMNS) delete copy[col];
+      return copy;
+    });
+    ({ error } = await supabase().from("articles").upsert(stripped, { onConflict: "source_url" }));
+  }
+  if (error) throw new Error(`Supabase upsert failed: ${error.message}`);
+
+  return rows.length;
+}
+
 export async function runPipeline(): Promise<PipelineResult> {
   const date = todayInBangkok();
+  const startedAt = Date.now();
+  const runId = await startRun(date);
 
+  try {
+    return await publishReport(date, startedAt, runId);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await finishRun(runId, {
+      status: "failed",
+      error: message,
+      duration_ms: Date.now() - startedAt,
+    });
+    throw err;
+  }
+}
+
+async function publishReport(
+  date: string,
+  startedAt: number,
+  runId: string | null
+): Promise<PipelineResult> {
   console.log("Fetching feeds...");
   const fetched = await fetchAllFeeds();
   console.log(`Fetched ${fetched.length} items after dedupe.`);
@@ -96,61 +184,41 @@ export async function runPipeline(): Promise<PipelineResult> {
   console.log(
     `Selected ${stories.length} stories (${stories.filter((s) => s.category === "thailand").length} from Thailand).`
   );
+  if (stories.length === 0) throw new Error("Curation selected no stories.");
 
+  // Each chunk is published the moment it is written, rather than holding the
+  // whole report in memory until the end: if the run is cut short, the reader
+  // gets the stories that did make it instead of an empty day.
   console.log("Writing summaries and vocabulary with Claude...");
-  const enriched = await enrichStories(stories);
-  console.log(`Enriched ${enriched.length} stories.`);
+  let published = 0;
+  const enriched = await enrichStories(stories, async (batch) => {
+    published += await publish(batch, date);
+    console.log(`Published ${published}/${stories.length} stories so far.`);
+  });
 
-  // The homepage shows only the newest published_date, so a mostly-failed run
-  // must not replace a full day's report with a near-empty one.
-  if (enriched.length < Math.ceil(stories.length / 2)) {
-    throw new Error(
-      `Only ${enriched.length}/${stories.length} stories enriched — refusing to publish a partial day.`
-    );
-  }
-
-  const rows = enriched.map((e) => ({
-    published_date: date,
-    headline: e.story.headline,
-    source: [...new Set(e.story.items.map((i) => i.source))].join(", "),
-    source_url: e.story.items[0].link,
-    category: e.story.category,
-    summary: e.summary,
-    why_it_matters: e.whyItMatters,
-    difficulty: e.difficulty,
-    reading_time_min: e.readingTimeMin,
-    importance: e.story.importance,
-    vocabulary: e.vocabulary,
-    related: e.related,
-    image_url: e.story.items.find((i) => i.image)?.image ?? null,
-    source_published_at: earliestPublished(e.story.items.map((i) => i.publishedAt)),
-  }));
-
-  // Columns added after the initial schema; stripped if the DB lacks them.
-  const OPTIONAL_COLUMNS = ["image_url", "source_published_at"];
-
-  let { error } = await supabase()
-    .from("articles")
-    .upsert(rows, { onConflict: "source_url" });
-  if (error && OPTIONAL_COLUMNS.some((col) => error!.message.includes(col))) {
+  const durationMs = Date.now() - startedAt;
+  const full = enriched.length >= Math.ceil(stories.length / 2);
+  if (!full) {
     console.warn(
-      `Optional columns missing — publishing without them. Run supabase/schema.sql migrations. (${error.message})`
+      `Only ${enriched.length}/${stories.length} stories survived enrichment — today's report is thin.`
     );
-    const stripped = rows.map((row) => {
-      const copy: Record<string, unknown> = { ...row };
-      for (const col of OPTIONAL_COLUMNS) delete copy[col];
-      return copy;
-    });
-    ({ error } = await supabase().from("articles").upsert(stripped, { onConflict: "source_url" }));
   }
-  if (error) throw new Error(`Supabase upsert failed: ${error.message}`);
 
-  console.log(`Published ${rows.length} articles for ${date}.`);
+  await finishRun(runId, {
+    status: full ? "ok" : "partial",
+    fetched: fetched.length,
+    curated: stories.length,
+    published,
+    duration_ms: durationMs,
+  });
+
+  console.log(`Published ${published} articles for ${date} in ${Math.round(durationMs / 1000)}s.`);
   return {
     fetched: fetched.length,
     curated: stories.length,
-    published: rows.length,
+    published,
     skipped: stories.length - enriched.length,
     date,
+    durationMs,
   };
 }
